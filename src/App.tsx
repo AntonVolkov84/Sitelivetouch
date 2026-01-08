@@ -1,35 +1,101 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { Routes, Route, Link, useNavigate, useLocation } from "react-router-dom";
+import { useEffect, useState } from "react";
+import Home from "./pages/Home";
+import Login from "./pages/Login";
+import RegisterUser from "./pages/RegisterUser";
+import RegisterSeller from "./pages/RegisterSeller";
+import Chat from "./pages/Chat";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const navigate = useNavigate();
+  const location = useLocation(); // Следим за сменой страниц
+  const [isAuth, setIsAuth] = useState(!!localStorage.getItem("accessToken"));
+
+  // Синхронизируем состояние авторизации при переходах
+  useEffect(() => {
+    setIsAuth(!!localStorage.getItem("accessToken"));
+  }, [location]);
+
+  const handleLogout = () => {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("user");
+    setIsAuth(false);
+    console.log("Пользователь разлогинен");
+    navigate("/login");
+  };
 
   return (
     <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
-}
+      <nav
+        style={{
+          padding: "0.8rem 2rem",
+          borderBottom: "1px solid #eee",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          gap: "20px", // Равномерный отступ между всеми элементами
+          backgroundColor: "white",
+        }}
+      >
+        <Link to="/" style={navLinkStyle}>
+          Home
+        </Link>
+        <Link to="/chat" style={navLinkStyle}>
+          Чат
+        </Link>
 
-export default App
+        <div style={{ display: "flex", alignItems: "center" }}>
+          {isAuth ? (
+            <button
+              onClick={handleLogout}
+              style={{
+                ...navLinkStyle,
+                color: "#ff4d4d", // Красный текст для выхода
+                border: "none",
+                background: "none",
+                cursor: "pointer",
+                padding: 0,
+                font: "inherit", // Чтобы шрифт был как у ссылок
+              }}
+            >
+              Выйти
+            </button>
+          ) : (
+            <Link to="/login" style={navLinkStyle}>
+              Войти
+            </Link>
+          )}
+        </div>
+      </nav>
+
+      <main
+        style={{
+          width: "100%",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          paddingTop: "40px",
+        }}
+      >
+        <div style={{ width: "100%", maxWidth: "600px" }}>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register-user" element={<RegisterUser />} />
+            <Route path="/register-seller" element={<RegisterSeller />} />
+            <Route path="/chat" element={<Chat />} />
+          </Routes>
+        </div>
+      </main>
+    </>
+  );
+}
+const navLinkStyle = {
+  textDecoration: "none",
+  color: "#333",
+  fontWeight: 500,
+  fontSize: "14px",
+  transition: "color 0.2s",
+};
+export default App;

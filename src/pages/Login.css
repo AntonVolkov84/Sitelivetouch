@@ -1,0 +1,77 @@
+/* Блок */
+.login-card {
+  background-color: #fff;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+  margin: 40px auto;
+}
+
+/* Элементы */
+.login-card__title {
+  margin-bottom: 30px;
+  color: #1c1e21;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.login-card__form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.login-card__input {
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  font-size: 16px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.login-card__input:focus {
+  border-color: #007bff;
+}
+
+.login-card__button {
+  padding: 12px;
+  border-radius: 8px;
+  border: none;
+  background-color: #007bff;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.login-card__button:hover {
+  background-color: #0056b3;
+}
+
+.login-card__button:active {
+  transform: scale(0.98);
+}
+
+.login-card__footer {
+  margin-top: 25px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.login-card__link {
+  color: #007bff;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+
+.login-card__link:hover {
+  text-decoration: underline;
+  opacity: 0.8;
+}
