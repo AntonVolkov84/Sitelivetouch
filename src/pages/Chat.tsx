@@ -4,11 +4,13 @@ import { type Chat, type UserAuthData } from "../types";
 import { api } from "../../axiosinstance";
 import { useWS } from "../context/WsContext";
 import Message from "../components/Message";
+import ProfileView from "../components/ProfileView";
 import "./Chat.css";
 
 export default function Chat() {
   const [user, setUser] = useState<UserAuthData | null>(null);
   const [chats, setChats] = useState<Chat[]>([]);
+  const [showProfile, setShowProfile] = useState(false);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
@@ -89,64 +91,70 @@ export default function Chat() {
     return chat.name?.toLowerCase().includes(q);
   });
 
-  if (loading) return <div className="loader">Загрузка...</div>;
+  if (loading) return <h2 className="loader">Загрузка...</h2>;
 
   return (
     <div className="chat-layout">
       <aside className="sidebar">
-        <div className="sidebar-header">
-          <div className="profile-circle" onClick={() => console.log("Profile")}>
-            {user?.username?.[0]?.toUpperCase()}
-          </div>
-          <div className="search-wrapper">
-            <input
-              type="text"
-              className="search-input"
-              placeholder="Поиск..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(cleanInput(e.target.value))}
-            />
-            <span className="search-icon">🔍</span>
-          </div>
-        </div>
-
-        <div className="chat-list">
-          {filteredChats.map((item) => {
-            const userInfo = item.type === "private" ? item.otherUser : null;
-            return (
-              <div
-                key={item.chat_id}
-                className={`chat-item ${selectedChat?.chat_id === item.chat_id ? "active" : ""}`}
-                onClick={() => setSelectedChat(item)}
-                onContextMenu={(e) => {
-                  e.preventDefault();
-                  deleteChat(item.chat_id);
-                }}
-              >
-                <div className="avatar-container">
-                  {userInfo?.avatar_url ? (
-                    <img src={userInfo.avatar_url} className="avatar-img" alt="" />
-                  ) : (
-                    <div className="avatar-placeholder">
-                      {(userInfo?.username?.[0] || item.name?.[0] || "G").toUpperCase()}
-                    </div>
-                  )}
-                </div>
-                <div className="chat-info">
-                  <div className="chat-name-row">
-                    <span className="chat-name">
-                      {userInfo ? `${userInfo.username} ${userInfo.usersurname}` : `Group: ${item.name}`}
-                    </span>
-                  </div>
-                  <span className="chat-sub">{userInfo?.email || "Групповой чат"}</span>
-                </div>
+        {showProfile ? (
+          <ProfileView onBack={() => setShowProfile(false)} />
+        ) : (
+          <>
+            <div className="sidebar-header">
+              <div className="profile-circle" onClick={() => setShowProfile(true)}>
+                {user?.username?.[0]?.toUpperCase()}
               </div>
-            );
-          })}
-        </div>
-        <button className="add-chat-fab" onClick={() => console.log("/add-chat")}>
-          +
-        </button>
+              <div className="search-wrapper">
+                <input
+                  type="text"
+                  className="search-input"
+                  placeholder="Поиск..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(cleanInput(e.target.value))}
+                />
+                <span className="search-icon">🔍</span>
+              </div>
+            </div>
+
+            <div className="chat-list">
+              {filteredChats.map((item) => {
+                const userInfo = item.type === "private" ? item.otherUser : null;
+                return (
+                  <div
+                    key={item.chat_id}
+                    className={`chat-item ${selectedChat?.chat_id === item.chat_id ? "active" : ""}`}
+                    onClick={() => setSelectedChat(item)}
+                    onContextMenu={(e) => {
+                      e.preventDefault();
+                      deleteChat(item.chat_id);
+                    }}
+                  >
+                    <div className="avatar-container">
+                      {userInfo?.avatar_url ? (
+                        <img src={userInfo.avatar_url} className="avatar-img" alt="" />
+                      ) : (
+                        <div className="avatar-placeholder">
+                          {(userInfo?.username?.[0] || item.name?.[0] || "G").toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                    <div className="chat-info">
+                      <div className="chat-name-row">
+                        <span className="chat-name">
+                          {userInfo ? `${userInfo.username} ${userInfo.usersurname}` : `Group: ${item.name}`}
+                        </span>
+                      </div>
+                      <span className="chat-sub">{userInfo?.email || "Групповой чат"}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <button className="add-chat-fab" onClick={() => console.log("/add-chat")}>
+              +
+            </button>
+          </>
+        )}
       </aside>
       <main className="main-content">
         {selectedChat ? (

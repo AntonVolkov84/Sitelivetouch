@@ -167,7 +167,14 @@
   font-weight: bold;
   border-bottom: 1px solid #e0e0e0;
 }
-
+.loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #888;
+}
 .add-chat-fab {
   position: absolute;
   bottom: 20px;

@@ -72,6 +72,8 @@ export default function Login() {
         expoToken: null,
       };
       const res = await api.post("/auth/login", dataToSend);
+      localStorage.setItem("accessToken", res.data.accessToken);
+      localStorage.setItem("refreshToken", res.data.refreshToken);
       setUser(res.data.user);
       navigate("/chat");
     } catch (err: any) {
