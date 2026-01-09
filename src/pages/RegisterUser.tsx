@@ -5,6 +5,7 @@ import "./Login.css";
 import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
 import { getEncodedPublicKey } from "../utils/crypto";
 import { logError } from "../utils/logger";
+import { sanitizeInput, validateEmail } from "../utils/validation";
 
 export default function RegisterUser() {
   const [formData, setFormData] = useState({
@@ -25,6 +26,18 @@ export default function RegisterUser() {
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const cleanEmail = sanitizeInput(formData.email.trim().toLowerCase());
+    const cleanPassword = formData.password.trim();
+    const cleanName = sanitizeInput(formData.username);
+    const cleanSurname = sanitizeInput(formData.usersurname);
+    if (!cleanEmail || !cleanPassword) {
+      alert("Пожалуйста, заполните все поля");
+      return;
+    }
+    if (!validateEmail(cleanEmail)) {
+      alert("Введите корректный адрес электронной почты");
+      return;
+    }
     if (!executeRecaptcha) {
       alert("Капча еще не загрузилась, подождите секунду");
       return;
@@ -34,13 +47,14 @@ export default function RegisterUser() {
       const token = await executeRecaptcha("register");
       const public_key = getEncodedPublicKey();
       const normalizedData = {
-        ...formData,
         public_key,
-        email: formData.email.trim().toLowerCase(),
+        email: cleanEmail,
+        password: cleanPassword,
+        username: cleanName,
+        usersurname: cleanSurname,
         captchaToken: token,
         manufacturer: "browser",
       };
-
       await api.post("/auth/register", normalizedData);
       alert(`Регистрация успешна! Проверьте почту ${normalizedData.email}`);
       navigate("/login");

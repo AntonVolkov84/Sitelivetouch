@@ -5,6 +5,8 @@ import { api } from "../../axiosinstance";
 import { getEncodedPublicKey } from "../utils/crypto";
 import { useNavigate } from "react-router-dom";
 import { logError } from "../utils/logger";
+import { sanitizeInput, validateEmail } from "../utils/validation";
+import { useUser } from "../context/UserContext";
 
 export default function Login() {
   const [formData, setFormData] = useState({
@@ -13,6 +15,7 @@ export default function Login() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { setUser } = useUser();
   const navigate = useNavigate();
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -49,22 +52,31 @@ export default function Login() {
   };
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const cleanEmail = sanitizeInput(formData.email.trim().toLowerCase());
+    const cleanPassword = formData.password.trim();
+    if (!cleanEmail || !cleanPassword) {
+      alert("Пожалуйста, заполните все поля");
+      return;
+    }
+    if (!validateEmail(cleanEmail)) {
+      alert("Введите корректный адрес электронной почты");
+      return;
+    }
     setLoading(true);
     try {
       const pubKey = getEncodedPublicKey();
       const dataToSend = {
-        ...formData,
+        email: cleanEmail,
+        password: cleanPassword,
         public_key: pubKey,
         expoToken: null,
       };
       const res = await api.post("/auth/login", dataToSend);
-      const { accessToken, refreshToken, user } = res.data;
-      localStorage.setItem("accessToken", accessToken);
-      localStorage.setItem("refreshToken", refreshToken);
-      localStorage.setItem("user", JSON.stringify(user));
+      setUser(res.data.user);
       navigate("/chat");
     } catch (err: any) {
       console.error("Ошибка входа", err);
+      alert(err.response?.data?.message || "Неверный логин или пароль");
       await logError("Ошибка при попытке входа", "Login page: handleSubmit_Login", err);
     } finally {
       setLoading(false);
