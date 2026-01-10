@@ -6,11 +6,12 @@ import { useWS } from "../context/WsContext";
 import Message from "../components/Message";
 import ProfileView from "../components/ProfileView";
 import "./Chat.css";
+import AddChatView from "../components/AddChatView";
 
 export default function Chat() {
   const [user, setUser] = useState<UserAuthData | null>(null);
   const [chats, setChats] = useState<Chat[]>([]);
-  const [showProfile, setShowProfile] = useState(false);
+  const [view, setView] = useState<"chats" | "profile" | "addChat">("chats");
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
@@ -18,10 +19,8 @@ export default function Chat() {
   const navigate = useNavigate();
   const { ws } = useWS() || {};
 
-  // Очистка ввода (твоя функция)
   const cleanInput = (text: string) => text.replace(/<\/?[^>]+(>|$)/g, "");
 
-  // Загрузка данных пользователя и чатов
   const fetchData = async () => {
     try {
       const [userRes, chatsRes] = await Promise.all([api.get("/auth/me"), api.get("/chats/getchats")]);
@@ -96,12 +95,11 @@ export default function Chat() {
   return (
     <div className="chat-layout">
       <aside className="sidebar">
-        {showProfile ? (
-          <ProfileView onBack={() => setShowProfile(false)} />
-        ) : (
+        {view === "profile" && <ProfileView onBack={() => setView("chats")} />}
+        {view === "chats" && (
           <>
             <div className="sidebar-header">
-              <div className="profile-circle" onClick={() => setShowProfile(true)}>
+              <div className="profile-circle" onClick={() => setView("profile")}>
                 {user?.username?.[0]?.toUpperCase()}
               </div>
               <div className="search-wrapper">
@@ -150,10 +148,30 @@ export default function Chat() {
                 );
               })}
             </div>
-            <button className="add-chat-fab" onClick={() => console.log("/add-chat")}>
+            <button className="add-chat-fab" onClick={() => setView("addChat")}>
               +
             </button>
           </>
+        )}
+        {view === "addChat" && (
+          <AddChatView
+            onBack={() => setView("chats")}
+            onSuccess={async (idFromApi) => {
+              setView("chats");
+              const finalId = String(idFromApi);
+              try {
+                const res = await api.get("/chats/getchats");
+                const updatedChats = res.data;
+                setChats(updatedChats);
+                const found = updatedChats.find((c: Chat) => String(c.chat_id) === finalId);
+                if (found) {
+                  setSelectedChat(found);
+                }
+              } catch (err) {
+                console.error("Error opening new chat:", err);
+              }
+            }}
+          />
         )}
       </aside>
       <main className="main-content">
