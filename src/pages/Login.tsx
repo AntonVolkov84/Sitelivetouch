@@ -60,6 +60,7 @@ export default function Login() {
             const keys = JSON.parse(naclUtil.encodeUTF8(decrypted));
             localStorage.setItem("@e2ee_public_key", keys.publicKey);
             localStorage.setItem("@e2ee_private_key", keys.privateKey);
+            console.log("Keys: ", keys.publicKey, keys.privateKey);
             localStorage.setItem("accessToken", res.data.accessToken);
             localStorage.setItem("refreshToken", res.data.refreshToken);
             setUser(res.data.user);
