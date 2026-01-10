@@ -6,19 +6,21 @@ import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
 import { getEncodedPublicKey } from "../utils/crypto";
 import { logError } from "../utils/logger";
 import { sanitizeInput, validateEmail } from "../utils/validation";
+import { useModal } from "../context/ModalContext";
 
 export default function RegisterUser() {
   const [formData, setFormData] = useState({
     username: "",
-    usersurname: "", // Добавили фамилию как в мобайле
+    usersurname: "",
     email: "",
     password: "",
   });
 
   const { executeRecaptcha } = useGoogleReCaptcha();
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false); // Для глазика
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+  const { showAlert } = useModal();
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -31,15 +33,15 @@ export default function RegisterUser() {
     const cleanName = sanitizeInput(formData.username);
     const cleanSurname = sanitizeInput(formData.usersurname);
     if (!cleanEmail || !cleanPassword) {
-      alert("Пожалуйста, заполните все поля");
+      showAlert("Заполните поля", "Пожалуйста, заполните все поля");
       return;
     }
     if (!validateEmail(cleanEmail)) {
-      alert("Введите корректный адрес электронной почты");
+      showAlert("Неверный Email", "Введите корректный адрес электронной почты");
       return;
     }
     if (!executeRecaptcha) {
-      alert("Капча еще не загрузилась, подождите секунду");
+      showAlert("Защита", "Капча еще не загрузилась, подождите секунду");
       return;
     }
     setLoading(true);
@@ -56,11 +58,14 @@ export default function RegisterUser() {
         manufacturer: "browser",
       };
       await api.post("/auth/register", normalizedData);
-      alert(`Регистрация успешна! Проверьте почту ${normalizedData.email}`);
+      showAlert(
+        "Регистрация успешна!",
+        `Мы отправили письмо на почту ${normalizedData.email}. Пожалуйста, подтвердите её для активации аккаунта.`
+      );
       navigate("/login");
     } catch (err: any) {
       logError("Ошибка регистрации", "WEB_RegisterUser", err);
-      alert(err.response?.data?.message || "Ошибка регистрации");
+      showAlert("Ошибка", err.response?.data?.message || "Не удалось создать аккаунт");
     } finally {
       setLoading(false);
     }
@@ -86,8 +91,6 @@ export default function RegisterUser() {
           onChange={handleChange}
           required
         />
-
-        {/* Пароль с глазиком как в логине */}
         <div className="password-wrapper" style={{ position: "relative", width: "100%" }}>
           <input
             type={showPassword ? "text" : "password"}

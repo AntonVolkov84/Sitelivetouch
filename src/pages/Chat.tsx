@@ -1,20 +1,24 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { type Chat, type UserAuthData } from "../types";
+import { type Chat } from "../types";
 import { api } from "../../axiosinstance";
 import { useWS } from "../context/WsContext";
 import Message from "../components/Message";
 import ProfileView from "../components/ProfileView";
 import "./Chat.css";
 import AddChatView from "../components/AddChatView";
+import { useUser } from "../context/UserContext";
+import { logError } from "../utils/logger";
+import { useModal } from "../context/ModalContext";
 
 export default function Chat() {
-  const [user, setUser] = useState<UserAuthData | null>(null);
+  const { user } = useUser();
   const [chats, setChats] = useState<Chat[]>([]);
   const [view, setView] = useState<"chats" | "profile" | "addChat">("chats");
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
+  const { showConfirm, showAlert } = useModal();
 
   const navigate = useNavigate();
   const { ws } = useWS() || {};
@@ -23,12 +27,11 @@ export default function Chat() {
 
   const fetchData = async () => {
     try {
-      const [userRes, chatsRes] = await Promise.all([api.get("/auth/me"), api.get("/chats/getchats")]);
-      setUser(userRes.data);
+      const chatsRes = await api.get("/chats/getchats");
       setChats(chatsRes.data);
     } catch (err) {
       console.error("Data fetch error:", err);
-      // Если юзера нет - на логин
+      await logError("Ошибка при попытке входа", "WEB Chat: fetchData", err);
       navigate("/login");
     } finally {
       setLoading(false);
@@ -37,13 +40,12 @@ export default function Chat() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [user]);
 
-  // WebSocket слушатель
   useEffect(() => {
     if (!ws) return;
 
-    const handleMessage = (event: MessageEvent) => {
+    const handleMessage = async (event: MessageEvent) => {
       try {
         const data = JSON.parse(event.data);
         if (["chat_created", "group_created", "add_participant"].includes(data.type)) {
@@ -53,8 +55,11 @@ export default function Chat() {
           setChats((prev) => prev.filter((c) => c.chat_id !== data.chat_id));
           if (selectedChat?.chat_id === data.chat_id) setSelectedChat(null);
         }
-      } catch (e) {
-        console.error("WS error:", e);
+      } catch (err: any) {
+        console.error("WS error:", err);
+        if (user) {
+          await logError(user.email, "WEB Chat: handleMessage", err);
+        }
       }
     };
 
@@ -62,20 +67,26 @@ export default function Chat() {
     return () => ws.removeEventListener("message", handleMessage);
   }, [ws, selectedChat]);
 
-  // Удаление чата
   const deleteChat = async (chatId: number) => {
-    if (window.confirm("Вы точно хотите покинуть этот чат?")) {
-      try {
-        await api.delete(`/chats/leave/${chatId}`);
-        setChats((prev) => prev.filter((c) => c.chat_id !== chatId));
-        if (selectedChat?.chat_id === chatId) setSelectedChat(null);
-      } catch (err) {
-        alert("Не удалось удалить чат");
-      }
-    }
+    showConfirm(
+      "Выход из чата",
+      "Вы точно хотите покинуть этот чат?",
+      async () => {
+        try {
+          await api.delete(`/chats/leave/${chatId}`);
+          setChats((prev) => prev.filter((c) => c.chat_id !== chatId));
+          if (selectedChat?.chat_id === chatId) setSelectedChat(null);
+        } catch (err: any) {
+          if (user) {
+            await logError(user.email, "WEB Chat: deleteChat", err);
+          }
+          showAlert("Ошибка", "Не удалось удалить чат");
+        }
+      },
+      "Покинуть"
+    );
   };
 
-  // Фильтрация (твоя функция)
   const filteredChats = chats.filter((chat) => {
     const q = searchQuery.trim().toLowerCase();
     if (!q) return true;

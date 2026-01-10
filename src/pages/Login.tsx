@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { logError } from "../utils/logger";
 import { sanitizeInput, validateEmail } from "../utils/validation";
 import { useUser } from "../context/UserContext";
+import { useModal } from "../context/ModalContext";
 
 export default function Login() {
   const [formData, setFormData] = useState({
@@ -17,6 +18,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const { setUser } = useUser();
   const navigate = useNavigate();
+  const { showAlert, showConfirm } = useModal();
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -26,40 +28,45 @@ export default function Login() {
   };
   const handleForgotPassword = async () => {
     if (!formData.email) {
-      alert("Введите email в поле выше, на него будет отправлено письмо для сброса пароля");
+      showAlert("Внимание", "Введите email в поле выше, на него будет отправлено письмо для сброса пароля");
       return;
     }
     if (!formData.password) {
-      alert("Введите в поле пароля ваш НОВЫЙ пароль. После подтверждения из письма он станет активным.");
+      showAlert(
+        "Внимание",
+        "Введите в поле пароля ваш НОВЫЙ пароль. После подтверждения из письма он станет активным."
+      );
       return;
     }
-    const confirm = window.confirm(
-      "На почту будет отправлено письмо. После клика по ссылке ваш новый пароль вступит в силу. Продолжить?"
+    showConfirm(
+      "Восстановление пароля",
+      "На почту будет отправлено письмо. После клика по ссылке ваш новый пароль вступит в силу. Продолжить?",
+      async () => {
+        try {
+          await api.post("/auth/forgot-password", {
+            email: formData.email.toLowerCase().trim(),
+            newPassword: formData.password,
+          });
+          showAlert("Успех", "Письмо для подтверждения отправлено!");
+          setFormData({ email: "", password: "" });
+        } catch (err: any) {
+          logError("Ошибка восстановления", "WEB Login_handleForgotPassword", err);
+          showAlert("Ошибка", err.response?.data?.message || "Не удалось отправить письмо");
+        }
+      },
+      "Продолжить"
     );
-    if (confirm) {
-      try {
-        await api.post("/auth/forgot-password", {
-          email: formData.email.toLowerCase().trim(),
-          newPassword: formData.password,
-        });
-        alert("Письмо для подтверждения отправлено!");
-        setFormData({ email: "", password: "" });
-      } catch (err: any) {
-        logError("Ошибка восстановления", "WEB Login_handleForgotPassword", err);
-        alert(err.response?.data?.message || "Не удалось отправить письмо");
-      }
-    }
   };
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const cleanEmail = sanitizeInput(formData.email.trim().toLowerCase());
     const cleanPassword = formData.password.trim();
     if (!cleanEmail || !cleanPassword) {
-      alert("Пожалуйста, заполните все поля");
+      showAlert("Заполните поля", "Пожалуйста, заполните все поля");
       return;
     }
     if (!validateEmail(cleanEmail)) {
-      alert("Введите корректный адрес электронной почты");
+      showAlert("Неверный формат", "Введите корректный адрес электронной почты");
       return;
     }
     setLoading(true);
@@ -78,8 +85,8 @@ export default function Login() {
       navigate("/chat");
     } catch (err: any) {
       console.error("Ошибка входа", err);
-      alert(err.response?.data?.message || "Неверный логин или пароль");
-      await logError("Ошибка при попытке входа", "Login page: handleSubmit_Login", err);
+      showAlert("Ошибка входа", err.response?.data?.message || "Неверный логин или пароль");
+      await logError("Ошибка при попытке входа", "WEB Login page: handleSubmit_Login", err);
     } finally {
       setLoading(false);
     }
