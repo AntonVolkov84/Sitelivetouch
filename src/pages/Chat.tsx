@@ -10,6 +10,7 @@ import AddChatView from "../components/AddChatView";
 import { useUser } from "../context/UserContext";
 import { logError } from "../utils/logger";
 import { useModal } from "../context/ModalContext";
+import { useUnread } from "../context/UnreadContext";
 
 export default function Chat() {
   const { user } = useUser();
@@ -19,6 +20,7 @@ export default function Chat() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
   const { showConfirm, showAlert } = useModal();
+  const { unreadChats, removeUnread, addUnread } = useUnread();
 
   const navigate = useNavigate();
   const { ws } = useWS() || {};
@@ -132,7 +134,10 @@ export default function Chat() {
                   <div
                     key={item.chat_id}
                     className={`chat-item ${selectedChat?.chat_id === item.chat_id ? "active" : ""}`}
-                    onClick={() => setSelectedChat(item)}
+                    onClick={() => {
+                      setSelectedChat(item);
+                      removeUnread(item.chat_id);
+                    }}
                     onContextMenu={(e) => {
                       e.preventDefault();
                       deleteChat(item.chat_id);
@@ -152,6 +157,7 @@ export default function Chat() {
                         <span className="chat-name">
                           {userInfo ? `${userInfo.username} ${userInfo.usersurname}` : `Group: ${item.name}`}
                         </span>
+                        {unreadChats.has(item.chat_id) && <span className="unread-badge">🔥</span>}
                       </div>
                       <span className="chat-sub">{userInfo?.email || "Групповой чат"}</span>
                     </div>

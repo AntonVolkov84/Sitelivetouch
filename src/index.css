@@ -4,14 +4,29 @@
   font-weight: 400;
 }
 
-body {
+/* Обнуляем всё лишнее */
+html,
+body,
+#root {
   margin: 0;
-  display: block;
-  min-width: 320px;
-  min-height: 100vh;
+  padding: 0;
+  width: 100%;
+  height: 100vh; /* Важно: строго высота вьюпорта */
+  overflow: hidden; /* Убираем скролл у всего окна, скроллы будут внутри колонок */
+}
+
+body {
   background-color: #f0f2f5;
+  display: block; /* Убираем центрирование, если оно было в других местах */
 }
 
 #root {
-  width: 100%;
+  display: flex;
+  flex-direction: column; /* Если у тебя есть Header сверху, они встанут друг под друга */
+}
+
+*,
+*:before,
+*:after {
+  box-sizing: border-box;
 }

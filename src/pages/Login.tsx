@@ -8,6 +8,10 @@ import { logError } from "../utils/logger";
 import { sanitizeInput, validateEmail } from "../utils/validation";
 import { useUser } from "../context/UserContext";
 import { useModal } from "../context/ModalContext";
+import { QRCodeSVG } from "qrcode.react";
+import { generateTempKeyPair } from "../utils/encryption";
+import nacl from "tweetnacl";
+import naclUtil from "tweetnacl-util";
 
 export default function Login() {
   const [formData, setFormData] = useState({
@@ -19,6 +23,58 @@ export default function Login() {
   const { setUser } = useUser();
   const navigate = useNavigate();
   const { showAlert, showConfirm } = useModal();
+  const [showQrModal, setShowQrModal] = useState(false);
+  const [qrValue, setQrValue] = useState("");
+  const [tempSecretKey, setTempSecretKey] = useState<Uint8Array | null>(null);
+
+  const handleQrStart = async () => {
+    const tempKeys = generateTempKeyPair();
+    setTempSecretKey(tempKeys.secretKey);
+    try {
+      const res = await api.post("/auth/qr-session", {
+        publicKey: tempKeys.publicKeyB64,
+      });
+      const { sessionId, qrString } = res.data;
+      setQrValue(qrString || `lt:qr:${sessionId}`);
+      setShowQrModal(true);
+      startPolling(sessionId, tempKeys.secretKey);
+    } catch (err: any) {
+      await logError("Ошибка при попытке создани QR кодя", "WEB Login page: handleQrStart", err);
+      showAlert("Ошибка", "Не удалось инициировать QR-вход");
+    }
+  };
+  const startPolling = (sessionId: string, secretKey: Uint8Array) => {
+    const interval = setInterval(async () => {
+      try {
+        const res = await api.get(`/auth/qr-check/${sessionId}`);
+        if (res.data.status === "completed") {
+          clearInterval(interval);
+          const { encryptedData, nonce, senderPubKey } = res.data;
+          const decrypted = nacl.box.open(
+            naclUtil.decodeBase64(encryptedData),
+            naclUtil.decodeBase64(nonce),
+            naclUtil.decodeBase64(senderPubKey),
+            secretKey
+          );
+          if (decrypted) {
+            const keys = JSON.parse(naclUtil.encodeUTF8(decrypted));
+            localStorage.setItem("@e2ee_public_key", keys.publicKey);
+            localStorage.setItem("@e2ee_private_key", keys.privateKey);
+            localStorage.setItem("accessToken", res.data.accessToken);
+            localStorage.setItem("refreshToken", res.data.refreshToken);
+            setUser(res.data.user);
+            setShowQrModal(false);
+            navigate("/chat");
+          }
+        }
+      } catch (err: any) {
+        await logError("Ошибка при попытке получения ответа от мобилки", "WEB Login page: startPolling", err);
+        console.error("Polling error", err);
+        if (err.response?.status === 410) clearInterval(interval);
+      }
+    }, 3000);
+  };
+
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -50,7 +106,7 @@ export default function Login() {
           showAlert("Успех", "Письмо для подтверждения отправлено!");
           setFormData({ email: "", password: "" });
         } catch (err: any) {
-          logError("Ошибка восстановления", "WEB Login_handleForgotPassword", err);
+          await logError("Ошибка восстановления", "WEB Login_handleForgotPassword", err);
           showAlert("Ошибка", err.response?.data?.message || "Не удалось отправить письмо");
         }
       },
@@ -94,7 +150,13 @@ export default function Login() {
   return (
     <div className="login-card">
       <h2 className="login-card__title">Вход в LiveTouch</h2>
-
+      <button type="button" className="login-card__qr-button" onClick={handleQrStart}>
+        <span style={{ marginRight: "8px" }}>📱</span>
+        Войти по QR-коду
+      </button>
+      <div className="login-card__divider">
+        <span>или через почту</span>
+      </div>
       <form className="login-card__form" onSubmit={handleSubmit}>
         <input
           type="email"
@@ -143,6 +205,58 @@ export default function Login() {
           Регистрация для продавцов
         </Link>
       </div>
+      {showQrModal && (
+        <div
+          className="qr-overlay"
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0,0,0,0.85)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 1000,
+          }}
+        >
+          <div
+            className="qr-modal"
+            style={{
+              background: "white",
+              padding: "30px",
+              borderRadius: "20px",
+              textAlign: "center",
+              maxWidth: "320px",
+              boxShadow: "0 10px 25px rgba(0,0,0,0.2)",
+            }}
+          >
+            <h3 style={{ marginBottom: "10px", color: "#333" }}>Сканируйте код</h3>
+            <p style={{ fontSize: "0.9rem", color: "#666", marginBottom: "20px" }}>
+              Откройте настройки в приложении LiveTouch и выберите «Связать устройство»
+            </p>
+
+            <div style={{ background: "white", padding: "10px", borderRadius: "10px" }}>
+              {qrValue && <QRCodeSVG value={qrValue} size={256} />}
+            </div>
+            <button
+              onClick={() => setShowQrModal(false)}
+              style={{
+                marginTop: "20px",
+                padding: "10px 20px",
+                border: "none",
+                background: "#eee",
+                borderRadius: "8px",
+                cursor: "pointer",
+                fontWeight: "bold",
+              }}
+            >
+              Отмена
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

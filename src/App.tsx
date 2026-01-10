@@ -1,30 +1,24 @@
-import { Routes, Route, Link, useNavigate, useLocation } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { Routes, Route, Link, useNavigate, useLocation, Navigate } from "react-router-dom";
+import { useUser } from "./context/UserContext";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import RegisterUser from "./pages/RegisterUser";
 import RegisterSeller from "./pages/RegisterSeller";
 import Chat from "./pages/Chat";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 
 function App() {
   const navigate = useNavigate();
-  const location = useLocation(); // Следим за сменой страниц
-  const [isAuth, setIsAuth] = useState(!!localStorage.getItem("accessToken"));
+  const location = useLocation();
+  const { user, setUser, loading } = useUser();
 
-  // Синхронизируем состояние авторизации при переходах
-  useEffect(() => {
-    setIsAuth(!!localStorage.getItem("accessToken"));
-  }, [location]);
+  const isChatPage = location.pathname === "/chat";
 
   const handleLogout = () => {
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
-    localStorage.removeItem("user");
-    setIsAuth(false);
-    console.log("Пользователь разлогинен");
+    setUser(null);
     navigate("/login");
   };
-
+  if (loading) return <div>Загрузка приложения...</div>;
   return (
     <>
       <nav
@@ -34,7 +28,7 @@ function App() {
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
-          gap: "20px", // Равномерный отступ между всеми элементами
+          gap: "20px",
           backgroundColor: "white",
         }}
       >
@@ -46,20 +40,9 @@ function App() {
         </Link>
 
         <div style={{ display: "flex", alignItems: "center" }}>
-          {isAuth ? (
-            <button
-              onClick={handleLogout}
-              style={{
-                ...navLinkStyle,
-                color: "#ff4d4d", // Красный текст для выхода
-                border: "none",
-                background: "none",
-                cursor: "pointer",
-                padding: 0,
-                font: "inherit", // Чтобы шрифт был как у ссылок
-              }}
-            >
-              Выйти
+          {user ? (
+            <button onClick={handleLogout} style={logoutButtonStyle}>
+              Выйти ({user.username})
             </button>
           ) : (
             <Link to="/login" style={navLinkStyle}>
@@ -74,28 +57,50 @@ function App() {
           width: "100%",
           display: "flex",
           flexDirection: "column",
-          alignItems: "center",
-          paddingTop: "40px",
+          alignItems: isChatPage ? "flex-start" : "center",
+          paddingTop: isChatPage ? "0" : "40px",
+          height: isChatPage ? "100vh" : "auto",
         }}
       >
-        <div style={{ width: "100%", maxWidth: "600px" }}>
+        <div
+          style={{
+            width: "100%",
+            maxWidth: isChatPage ? "100%" : "600px",
+            height: isChatPage ? "100%" : "auto",
+          }}
+        >
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
+            <Route path="/login" element={user ? <Navigate to="/chat" /> : <Login />} />
             <Route path="/register-user" element={<RegisterUser />} />
             <Route path="/register-seller" element={<RegisterSeller />} />
-            <Route path="/chat" element={<Chat />} />
+            <Route element={<ProtectedRoute />}>
+              <Route path="/chat" element={<Chat />} />
+            </Route>
+
+            <Route path="*" element={<Navigate to="/login" />} />
           </Routes>
         </div>
       </main>
     </>
   );
 }
+
 const navLinkStyle = {
   textDecoration: "none",
   color: "#333",
   fontWeight: 500,
   fontSize: "14px",
-  transition: "color 0.2s",
 };
+
+const logoutButtonStyle = {
+  ...navLinkStyle,
+  color: "#ff4d4d",
+  border: "none",
+  background: "none",
+  cursor: "pointer",
+  padding: 0,
+  font: "inherit",
+};
+
 export default App;

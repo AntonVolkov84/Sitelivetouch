@@ -1,9 +1,8 @@
 import { Navigate, Outlet } from "react-router-dom";
+import { useUser } from "../context/UserContext";
 
 export const ProtectedRoute = () => {
-  const token = localStorage.getItem("accessToken");
-  if (!token) {
-    return <Navigate to="/login" replace />;
-  }
-  return <Outlet />;
+  const { user, loading } = useUser();
+  if (loading) return <div style={{ display: "flex", alignItems: "center" }}>Загрузка...</div>;
+  return user ? <Outlet /> : <Navigate to="/login" replace />;
 };

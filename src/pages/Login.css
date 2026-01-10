@@ -75,3 +75,34 @@
   text-decoration: underline;
   opacity: 0.8;
 }
+.login-card__qr-button {
+  width: 100%;
+  padding: 12px;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  color: #495057;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 20px;
+}
+
+.login-card__qr-button:hover {
+  background-color: #e9ecef;
+  border-color: #adb5bd;
+}
+
+.login-card__divider {
+  text-align: center;
+  border-bottom: 1px solid #eee;
+  line-height: 0.1em;
+  margin: 10px 0 25px;
+  color: #999;
+  font-size: 0.9rem;
+}
+
+.login-card__divider span {
+  background: #fff;
+  padding: 0 10px;
+}
