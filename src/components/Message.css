@@ -1,0 +1,93 @@
+/* Общий контейнер, где лежат все сообщения */
+.messages-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 10px;
+  gap: 8px; /* Расстояние между сообщениями */
+}
+
+/* Обертка каждого сообщения */
+.message-wrapper {
+  display: flex;
+  width: 100%;
+  background: transparent; /* Сама обертка прозрачная */
+}
+
+/* Мои сообщения — прижимаем вправо */
+.message-wrapper.me {
+  justify-content: flex-end;
+}
+
+/* Чужие сообщения — прижимаем влево */
+.message-wrapper.them {
+  justify-content: flex-start;
+}
+
+/* Стили самого бабла (пузыря) */
+.message-bubble {
+  max-width: 70%;
+  padding: 8px 12px;
+  border-radius: 12px;
+  position: relative;
+}
+
+/* Цвета для различия */
+.me .message-bubble {
+  background-color: #0078fe; /* Синий для тебя */
+  color: white;
+  border-bottom-right-radius: 2px; /* Хвостик справа */
+}
+
+.them .message-bubble {
+  background-color: #e9e9eb; /* Серый для них */
+  color: black;
+  border-bottom-left-radius: 2px; /* Хвостик слева */
+}
+
+/* Аватарки и инфо внутри бабла */
+.message-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.mini-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.custom-context-menu {
+  position: fixed; /* Именно fixed, чтобы координаты clientX/Y работали верно */
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  z-index: 10000; /* Чтобы было поверх всех чатов и аватарок */
+  display: flex;
+  flex-direction: column;
+  padding: 4px 0;
+  min-width: 140px;
+}
+
+.custom-context-menu button {
+  padding: 10px 16px;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  font-size: 14px;
+  width: 100%;
+}
+
+.custom-context-menu button:hover {
+  background: #f5f5f5;
+}
+
+.custom-context-menu .delete-btn {
+  color: #ff4d4f;
+  border-top: 1px solid #eee;
+}

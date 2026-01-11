@@ -190,3 +190,186 @@
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
   z-index: 10;
 }
+
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: #f0f2f5;
+  position: relative;
+  height: 100vh;
+  padding-bottom: 50px;
+}
+
+/* Окно активного чата */
+.chat-active-window {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* Шапка чата */
+.chat-window-header {
+  height: 60px;
+  background-color: #fff;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  border-bottom: 1px solid #ddd;
+  font-weight: 600;
+  font-size: 1.1rem;
+  z-index: 10;
+}
+
+/* Контейнер сообщений */
+.messages-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px; /* Расстояние между сообщениями */
+}
+
+/* Общий ряд сообщения */
+.message-row {
+  display: flex;
+  width: 100%;
+  margin-bottom: 4px;
+}
+
+.message-row.me {
+  justify-content: flex-end;
+}
+
+.message-row.them {
+  justify-content: flex-start;
+}
+
+/* Пузырек сообщения */
+.message-bubble {
+  max-width: 65%;
+  padding: 8px 14px;
+  border-radius: 12px;
+  position: relative;
+  font-size: 15px;
+  line-height: 1.4;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Стиль для моих сообщений */
+.message-row.me .message-bubble {
+  background-color: #4a8cff; /* Твой синий цвет из мобилки */
+  color: #fff;
+  border-bottom-right-radius: 2px;
+}
+
+/* Стиль для чужих сообщений */
+.message-row.them .message-bubble {
+  background-color: #fff;
+  color: #333;
+  border-bottom-left-radius: 2px;
+}
+
+/* Имя отправителя в группах */
+.message-sender {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  color: #4a8cff;
+}
+
+/* Время сообщения */
+.message-time {
+  font-size: 10px;
+  display: block;
+  text-align: right;
+  margin-top: 4px;
+  opacity: 0.7;
+}
+
+/* Нижняя панель ввода */
+.input-area {
+  background-color: #fff;
+  padding: 15px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-top: 1px solid #eee;
+  margin-bottom: 20px;
+  width: 90%;
+  align-self: center;
+}
+
+.message-input.multiline {
+  flex: 1;
+  border: 1px solid #ddd;
+  border-radius: 20px;
+  padding: 10px 15px;
+  outline: none;
+  font-size: 15px;
+  font-family: inherit;
+  resize: none;
+  min-height: 40px;
+  max-height: 100px;
+  line-height: 1.4;
+  background-color: #fff;
+  transition: border-color 0.2s;
+  overflow-y: hidden;
+}
+
+.message-input.multiline:focus,
+.message-input.multiline {
+  overflow-y: auto;
+}
+
+.message-input.multiline::-webkit-scrollbar {
+  width: 4px;
+}
+
+.message-input.multiline::-webkit-scrollbar-thumb {
+  background: #eee;
+  border-radius: 10px;
+}
+
+.send-button {
+  background-color: #4a8cff;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.1s, opacity 0.2s;
+}
+
+.send-button:hover {
+  opacity: 0.9;
+}
+
+.send-button:active {
+  transform: scale(0.95);
+}
+
+/* Экран, когда чат не выбран */
+.empty-chat {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #888;
+  background-color: #f8f9fa;
+}
+
+.empty-content {
+  text-align: center;
+}
+
+.empty-content h2 {
+  margin-bottom: 10px;
+  color: #333;
+}

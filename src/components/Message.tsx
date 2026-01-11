@@ -1,12 +1,14 @@
 import { type DecryptedMessage } from "../types";
+import "./Message.css";
 
 interface PropsMessage {
   message: DecryptedMessage;
   isMe: boolean;
   onPressProfile?: (id: number) => void;
+  onContextMenu?: (e: React.MouseEvent, msg: DecryptedMessage) => void;
 }
 
-export default function Message({ message, isMe, onPressProfile }: PropsMessage) {
+export default function Message({ message, isMe, onPressProfile, onContextMenu }: PropsMessage) {
   const renderContent = () => {
     const text = message.text;
 
@@ -35,12 +37,12 @@ export default function Message({ message, isMe, onPressProfile }: PropsMessage)
   };
 
   return (
-    <div className={`message-wrapper ${isMe ? "me" : "them"}`}>
+    <div onContextMenu={(e) => onContextMenu?.(e, message)} className={`message-wrapper ${isMe ? "me" : "them"}`}>
       <div className="message-bubble">
         <div className="message-info" onClick={() => onPressProfile?.(message.sender_id)}>
-          {!isMe && message.sender_avatar && <img src={message.sender_avatar} className="mini-avatar" />}
+          {!isMe && message.sender_avatar && <img src={message.sender_avatar} className="mini-avatar" alt="avatar" />}
           <span className="sender-name">{`${message.sender_surname} ${message.sender_name}`}</span>
-          {isMe && message.sender_avatar && <img src={message.sender_avatar} className="mini-avatar" />}
+          {isMe && message.sender_avatar && <img src={message.sender_avatar} className="mini-avatar" alt="avatar" />}
         </div>
 
         {renderContent()}

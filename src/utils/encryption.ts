@@ -1,7 +1,6 @@
 import nacl from "tweetnacl";
 import naclUtil from "tweetnacl-util";
 
-// Ключи в браузере будем хранить в localStorage
 const PUBLIC_KEY_STORAGE = "@e2ee_public_key";
 const PRIVATE_KEY_STORAGE = "@e2ee_private_key";
 
