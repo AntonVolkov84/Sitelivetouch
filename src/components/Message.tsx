@@ -13,9 +13,11 @@ export default function Message({ message, isMe, onPressProfile, onContextMenu }
     const text = message.text;
 
     if (text.startsWith("https://api.livetouch.chat/photos/")) {
-      return <img src={text} alt="photo" className="msg-media" />;
+      return <img src={text} alt="Shared" onClick={() => window.open(text, "_blank")} />;
     }
-
+    if (text.startsWith("https://api.livetouch.chat/video/")) {
+      return <video src={text} controls />;
+    }
     if (text.startsWith("https://api.livetouch.chat/files/")) {
       const fileName = text.split("/").pop();
       return (
@@ -28,11 +30,6 @@ export default function Message({ message, isMe, onPressProfile, onContextMenu }
         </a>
       );
     }
-
-    if (text.startsWith("https://api.livetouch.chat/video/")) {
-      return <video src={text} controls className="msg-media" />;
-    }
-
     return <span className="msg-text">{text}</span>;
   };
 
@@ -48,7 +45,15 @@ export default function Message({ message, isMe, onPressProfile, onContextMenu }
         {renderContent()}
 
         <div className="message-time">
-          {new Date(message.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+          {message.updated_at &&
+            new Date(message.updated_at).getTime() - new Date(message.created_at).getTime() > 1000 && (
+              <span className="edited-mark">ред.</span>
+            )}
+          {new Date(
+            message.updated_at && new Date(message.updated_at).getTime() - new Date(message.created_at).getTime() > 1000
+              ? message.updated_at
+              : message.created_at
+          ).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
         </div>
       </div>
     </div>

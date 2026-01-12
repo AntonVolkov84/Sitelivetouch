@@ -29,10 +29,74 @@ export default function Chat() {
   const [editMode, setEditMode] = useState(false);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; msg: DecryptedMessage } | null>(null);
   const [viewedProfileId, setViewedProfileId] = useState<number | null>(null);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isParticipantsModalOpen, setIsParticipantsModalOpen] = useState(false);
+  const [participants, setParticipants] = useState<any[]>([]);
+  const [newUserEmail, setNewUserEmail] = useState("");
+
   const navigate = useNavigate();
   const { ws } = useWS() || {};
   const cleanInput = (text: string) => text.replace(/<\/?[^>]+(>|$)/g, "");
 
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!event.target.files) return;
+    const file = event.target.files[0];
+    if (!file) return;
+    const MAX_SIZE = 20 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      alert("Файл слишком большой. Максимальный размер — 20 МБ.");
+      return;
+    }
+    await uploadFileWeb(file);
+    event.target.value = "";
+  };
+
+  const uploadFileWeb = async (file: File) => {
+    const mime = file.type;
+    let bucket = "files";
+    if (mime.startsWith("image/")) bucket = "photos";
+    else if (mime.startsWith("video/")) bucket = "video";
+    else if (mime.startsWith("audio/")) bucket = "voice";
+    const fileExt = file.name.split(".").pop();
+    const uniqueName = `${Date.now()}-${Math.floor(Math.random() * 1e9)}.${fileExt}`;
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("bucket", bucket);
+    formData.append("filename", uniqueName);
+    try {
+      const response = await fetch("https://api.livetouch.chat/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error("Upload failed");
+      const data = await response.json();
+      if (!selectedChat) return;
+      await addFileRecord(selectedChat.chat_id, bucket, uniqueName);
+      handleSendWeb(data.url);
+    } catch (err: any) {
+      console.error("Upload error:", err.message);
+      alert("Ошибка при загрузке файла");
+    }
+  };
+  const addFileRecord = async (chatId: number, bucket: string, fileName: string) => {
+    try {
+      console.log({
+        chat_id: chatId,
+        bucket: bucket,
+        file_name: fileName,
+      });
+      await api.post("/miniodata", {
+        chat_id: chatId,
+        bucket: bucket,
+        file_name: fileName,
+      });
+      console.log("Запись о файле успешно добавлена в БД");
+    } catch (err: any) {
+      console.error("Ошибка при записи файла в БД:", err.response?.data || err.message);
+    }
+  };
   const markAsRead = async () => {
     if (!selectedChat?.chat_id) return;
     removeUnread(selectedChat.chat_id);
@@ -74,6 +138,16 @@ export default function Chat() {
       y -= menuHeight;
     }
     setContextMenu({ x, y, msg });
+  };
+  const fetchParticipants = async () => {
+    if (!selectedChat) return;
+    try {
+      const res = await api.get(`/chats/${selectedChat.chat_id}/participants`);
+      setParticipants(res.data);
+      setIsParticipantsModalOpen(true);
+    } catch (err) {
+      console.error("Ошибка загрузки участников:", err);
+    }
   };
   const addParticipant = async (email: string) => {
     if (!selectedChat) return;
@@ -357,7 +431,6 @@ export default function Chat() {
         }
         if (data.type === "message_new" && Number(data.chat_id) === Number(selectedChat?.chat_id)) {
           const keyPair = getStoredKeyPair();
-          console.log("socket data", data);
           if (!keyPair) {
             return showAlert("Ошибка", "Ключи шифрования не найдены");
           }
@@ -371,7 +444,6 @@ export default function Chat() {
               if (!theirPub) throw new Error("No key");
               text = decryptMessage(data.ciphertext, data.nonce, privateKey, theirPub);
             } catch {
-              // В вебе функция getParticipantPublicKey должна быть определена или заменена на запрос
               const freshKey = await getParticipantPublicKey(selectedChat.chat_id, selectedChat.otherUser?.id);
               if (!freshKey) {
                 text = "[Ошибка расшифровки]";
@@ -450,6 +522,7 @@ export default function Chat() {
         }
 
         if (data.type === "message_updated" && Number(data.chat_id) === Number(selectedChat?.chat_id)) {
+          console.log("socket data", data);
           if (selectedChat?.type === "group" && Array.isArray(data.messages)) {
             if (!user) return;
             const myCopy = data.messages.find(
@@ -473,7 +546,7 @@ export default function Chat() {
                     const mId = Number(msg.id);
                     const mParentId = msg.parent_id ? Number(msg.parent_id) : null;
                     if (mId === commonId || mParentId === commonId) {
-                      return { ...msg, text: decryptedText, ciphertext: myCopy.ciphertext, nonce: myCopy.nonce };
+                      return { ...msg, ...myCopy, text: decryptedText };
                     }
                     return msg;
                   })
@@ -507,7 +580,7 @@ export default function Chat() {
               const incomingId = Number(updateData.id || data.message_id);
               return prev.map((m) => {
                 if (Number(m.id) === incomingId) {
-                  return { ...m, text: decryptedText, ciphertext: updateData.ciphertext, nonce: updateData.nonce };
+                  return { ...m, ...updateData, text: decryptedText };
                 }
                 return m;
               });
@@ -651,10 +724,49 @@ export default function Chat() {
         {selectedChat ? (
           <div className="chat-active-window">
             <header className="chat-window-header">
-              <div className="chat-header-user">
-                {selectedChat.type === "private"
-                  ? `${selectedChat.otherUser?.username} ${selectedChat.otherUser?.usersurname}`
-                  : selectedChat.name}
+              <div
+                className="header-info"
+                onClick={selectedChat.type === "group" ? fetchParticipants : undefined}
+                style={{ cursor: "pointer", display: "flex", flexDirection: "column" }}
+              >
+                <h4 style={{ margin: 0 }}>{selectedChat.name}</h4>
+                {selectedChat.type === "group" && <span className="sub-text">нажмите, чтобы увидеть всех</span>}
+              </div>
+
+              <div className="header-actions">
+                {selectedChat.type === "group" && (
+                  <button
+                    onClick={() => setIsAddModalOpen(true)}
+                    style={{
+                      width: "36px",
+                      height: "36px",
+                      borderRadius: "50%",
+                      backgroundColor: "#4a8cff",
+                      border: "none",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      cursor: "pointer",
+                      padding: 0,
+                      color: "white",
+                      boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                    }}
+                  >
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <line x1="12" y1="5" x2="12" y2="19"></line>
+                      <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                  </button>
+                )}
               </div>
             </header>
             <div className="messages-container">
@@ -669,6 +781,25 @@ export default function Chat() {
               ))}
             </div>
             <footer className="input-area">
+              <button
+                type="button"
+                className="attach-btn"
+                onClick={() => document.getElementById("file-upload")!.click()}
+                title="Прикрепить файл"
+              >
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                </svg>
+              </button>
               <textarea
                 className="message-input multiline"
                 placeholder="Введите сообщение..."
@@ -690,6 +821,14 @@ export default function Chat() {
                   }
                 }}
               />
+              <input
+                type="file"
+                id="file-upload"
+                style={{ display: "none" }}
+                onChange={(e) => handleFileSelect(e)}
+                accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.zip"
+              />
+
               <button
                 className="send-button"
                 onClick={() => {
@@ -745,6 +884,58 @@ export default function Chat() {
           >
             Удалить
           </button>
+        </div>
+      )}
+      {/* Модалка добавления */}
+      {isAddModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-window">
+            <h3>Добавить участника</h3>
+            <input
+              type="email"
+              value={newUserEmail}
+              onChange={(e) => setNewUserEmail(e.target.value)}
+              placeholder="Введите email пользователя"
+            />
+            <div className="modal-buttons">
+              <button
+                onClick={() => {
+                  addParticipant(newUserEmail);
+                  setIsAddModalOpen(false);
+                  setNewUserEmail("");
+                }}
+              >
+                Добавить
+              </button>
+              <button className="cancel" onClick={() => setIsAddModalOpen(false)}>
+                Отмена
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Модалка списка участников */}
+      {isParticipantsModalOpen && (
+        <div className="modal-overlay" onClick={() => setIsParticipantsModalOpen(false)}>
+          <div className="modal-window participants-list" onClick={(e) => e.stopPropagation()}>
+            <h3>Участники группы</h3>
+            <div className="list-container">
+              {participants.map((p) => (
+                <div key={p.id} className="participant-item">
+                  <img src={p.avatar_url || "/default-avatar.png"} alt="avatar" />
+                  <div className="p-info">
+                    <span>
+                      {p.username} {p.usersurname}
+                    </span>
+                    {p.id === user?.id && <small>(Вы)</small>}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button className="participant-item-btn" onClick={() => setIsParticipantsModalOpen(false)}>
+              Закрыть
+            </button>
+          </div>
         </div>
       )}
     </div>

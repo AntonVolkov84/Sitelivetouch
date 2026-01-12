@@ -55,7 +55,8 @@ export type DecryptedMessage = {
   sender_avatar: string;
   user_id?: number;
   parent_id: number;
-  sender_public_key?: "string";
+  sender_public_key?: string;
+  updated_at?: string;
 };
 export type GetParticipantsData = {
   public_key: string;

@@ -1,51 +1,38 @@
-/* Общий контейнер, где лежат все сообщения */
 .messages-container {
   display: flex;
   flex-direction: column;
   width: 100%;
   padding: 10px;
-  gap: 8px; /* Расстояние между сообщениями */
+  gap: 8px;
 }
-
-/* Обертка каждого сообщения */
 .message-wrapper {
   display: flex;
   width: 100%;
-  background: transparent; /* Сама обертка прозрачная */
+  background: transparent;
 }
-
-/* Мои сообщения — прижимаем вправо */
 .message-wrapper.me {
   justify-content: flex-end;
 }
-
-/* Чужие сообщения — прижимаем влево */
 .message-wrapper.them {
   justify-content: flex-start;
 }
-
-/* Стили самого бабла (пузыря) */
 .message-bubble {
   max-width: 70%;
   padding: 8px 12px;
   border-radius: 12px;
   position: relative;
 }
-
-/* Цвета для различия */
 .me .message-bubble {
-  background-color: #0078fe; /* Синий для тебя */
+  background-color: #0078fe;
   color: white;
-  border-bottom-right-radius: 2px; /* Хвостик справа */
+  border-bottom-right-radius: 2px;
 }
 
 .them .message-bubble {
-  background-color: #e9e9eb; /* Серый для них */
+  background-color: #e9e9eb;
   color: black;
-  border-bottom-left-radius: 2px; /* Хвостик слева */
+  border-bottom-left-radius: 2px;
 }
-
-/* Аватарки и инфо внутри бабла */
 .message-info {
   display: flex;
   align-items: center;
@@ -61,12 +48,12 @@
   object-fit: cover;
 }
 .custom-context-menu {
-  position: fixed; /* Именно fixed, чтобы координаты clientX/Y работали верно */
+  position: fixed;
   background: white;
   border: 1px solid #ddd;
   border-radius: 8px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-  z-index: 10000; /* Чтобы было поверх всех чатов и аватарок */
+  z-index: 10000;
   display: flex;
   flex-direction: column;
   padding: 4px 0;
@@ -90,4 +77,138 @@
 .custom-context-menu .delete-btn {
   color: #ff4d4f;
   border-top: 1px solid #eee;
+}
+
+.message-time {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  font-size: 11px;
+  margin-top: 4px;
+  line-height: 1;
+}
+.me .message-time {
+  color: rgba(255, 255, 255, 0.8);
+}
+.me .edited-mark {
+  color: rgba(255, 255, 255, 0.7);
+}
+.them .message-time {
+  color: #8e8e93;
+}
+
+.them .edited-mark {
+  color: #8e8e93;
+}
+.edited-mark {
+  font-size: 10px;
+  margin-right: 4px;
+  font-style: italic;
+  font-weight: normal;
+  user-select: none;
+}
+.msg-text {
+  word-break: break-word;
+  display: block;
+  margin-bottom: 2px;
+}
+.message-text img,
+.message-text video {
+  max-width: 400px;
+  max-height: 300px;
+  width: auto;
+  height: auto;
+  border-radius: 12px;
+  margin-top: 8px;
+  display: block;
+  object-fit: cover;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+}
+
+.file-attachment {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f0f4f8;
+  padding: 10px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: #333;
+  max-width: 300px;
+  margin-top: 5px;
+}
+
+.file-attachment:hover {
+  background: #e2e8f0;
+}
+.message-bubble img:not(.mini-avatar) {
+  max-width: 550px; /* Максимальная ширина */
+  max-height: 600px; /* Максимальная высота */
+  width: 100%; /* Адаптивность под макс-ширину */
+  height: auto; /* Сохранение пропорций */
+  border-radius: 12px;
+  display: block;
+  margin: 8px 0;
+  object-fit: contain; /* Чтобы фото не обрезалось */
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.message-bubble img:not(.mini-avatar):hover {
+  transform: scale(1.01);
+}
+
+/* Ограничение для ВИДЕО */
+.message-bubble video {
+  max-width: 550px;
+  border-radius: 12px;
+  margin: 8px 0;
+  display: block;
+  outline: none;
+  background: #000;
+}
+
+/* Стили для ФАЙЛА (карточка) */
+.file-link {
+  display: flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.05);
+  padding: 10px 14px;
+  border-radius: 10px;
+  text-decoration: none;
+  color: inherit;
+  gap: 12px;
+  margin: 8px 0;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  min-width: 200px;
+  max-width: 300px;
+}
+
+.file-icon {
+  font-size: 24px;
+  background: #fff;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.file-name {
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+}
+
+.file-sub {
+  font-size: 11px;
+  color: #4a8cff;
+  font-weight: bold;
+  text-transform: uppercase;
 }

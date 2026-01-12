@@ -160,12 +160,13 @@
 
 .chat-window-header {
   height: 60px;
-  background: #fff;
+  background-color: #fff;
   display: flex;
   align-items: center;
+  gap: 20px;
   padding: 0 20px;
-  font-weight: bold;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid #ddd;
+  box-sizing: border-box;
 }
 .loader {
   display: flex;
@@ -372,4 +373,249 @@
 .empty-content h2 {
   margin-bottom: 10px;
   color: #333;
+}
+/* --- MODALS (Добавление участника и Список) --- */
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(2px);
+}
+
+.modal-window {
+  background: #fff;
+  width: 100%;
+  max-width: 400px;
+  border-radius: 15px;
+  padding: 24px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  animation: modalAppear 0.2s ease-out;
+}
+
+@keyframes modalAppear {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.modal-window h3 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-size: 20px;
+  color: #333;
+}
+
+.modal-window input {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid #dfe1e5;
+  border-radius: 8px;
+  font-size: 16px;
+  margin-bottom: 20px;
+  box-sizing: border-box;
+  outline: none;
+}
+
+.modal-window input:focus {
+  border-color: #4a8cff;
+}
+
+.modal-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.modal-buttons button {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.modal-buttons button:first-child {
+  background-color: #4a8cff;
+  color: white;
+}
+
+.modal-buttons button.cancel {
+  background-color: #f0f2f5;
+  color: #555;
+}
+
+.modal-buttons button:hover {
+  opacity: 0.85;
+}
+
+.participants-list {
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.list-container {
+  overflow-y: auto;
+  margin-bottom: 20px;
+  flex: 1;
+}
+
+.participant-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.participant-item img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.p-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.p-info span {
+  font-weight: 500;
+  font-size: 15px;
+}
+
+.p-info small {
+  color: #4a8cff;
+  font-size: 12px;
+}
+
+.header-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.header-info h4 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.sub-text {
+  font-size: 11px;
+  color: #888;
+  font-weight: normal;
+}
+
+.header-actions button {
+  background: none;
+  border: none;
+  color: #4a8cff;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+}
+
+.header-actions button:hover {
+  background-color: #f0f7ff;
+}
+.header-actions {
+  display: flex;
+  align-items: center;
+}
+.add-user-btn {
+  background-color: #4a8cff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.add-user-btn:hover {
+  background-color: #357ae8;
+}
+
+.add-user-btn i {
+  font-size: 16px;
+}
+
+.sub-text {
+  font-size: 12px;
+  color: #888;
+  font-weight: normal;
+  margin-top: 2px;
+}
+.participant-item-btn {
+  width: 100%;
+  padding: 12px;
+  background-color: #4a8cff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 20px;
+  display: block;
+  transition: opacity 0.2s;
+}
+
+.participant-item-btn:hover {
+  opacity: 0.9;
+}
+.attach-btn {
+  background-color: #f0f2f5; /* Светло-серый фон, чтобы кнопка не пропадала */
+  border: 1px solid #e1e4e8; /* Тонкая рамка для четкости границ */
+  padding: 8px;
+  margin: 0 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #5f6368; /* Более контрастный серый */
+  transition: all 0.2s ease;
+  border-radius: 50%;
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+}
+
+.attach-btn:hover {
+  background-color: #f0f2f5;
+  color: #4a8cff;
+}
+
+.attach-btn:active {
+  transform: scale(0.9);
+}
+
+.attach-btn i {
+  font-size: 20px;
+}
+.upload-progress-circle {
+  font-size: 12px;
+  color: #4a8cff;
+  font-weight: bold;
+  margin-left: 5px;
 }
