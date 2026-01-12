@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { type Chat, type DecryptedMessage } from "../types";
 import { api } from "../../axiosinstance";
@@ -38,6 +38,11 @@ export default function Chat() {
   const { ws } = useWS() || {};
   const cleanInput = (text: string) => text.replace(/<\/?[^>]+(>|$)/g, "");
 
+  const handleStartCall = () => {
+    if (!selectedChat || !selectedChat.otherUser) return;
+    navigate(`/call/${selectedChat.chat_id}?callerId=${selectedChat.otherUser.id}&isIncoming=false`);
+  };
+
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!event.target.files) return;
     const file = event.target.files[0];
@@ -50,7 +55,6 @@ export default function Chat() {
     await uploadFileWeb(file);
     event.target.value = "";
   };
-
   const uploadFileWeb = async (file: File) => {
     const mime = file.type;
     let bucket = "files";
@@ -729,7 +733,11 @@ export default function Chat() {
                 onClick={selectedChat.type === "group" ? fetchParticipants : undefined}
                 style={{ cursor: "pointer", display: "flex", flexDirection: "column" }}
               >
-                <h4 style={{ margin: 0 }}>{selectedChat.name}</h4>
+                <h4 style={{ margin: 0 }}>
+                  {selectedChat.type === "private"
+                    ? selectedChat.otherUser?.usersurname + " " + selectedChat.otherUser?.username
+                    : selectedChat.name}
+                </h4>
                 {selectedChat.type === "group" && <span className="sub-text">нажмите, чтобы увидеть всех</span>}
               </div>
 
@@ -767,6 +775,30 @@ export default function Chat() {
                     </svg>
                   </button>
                 )}
+                <div className="chat-header-actions">
+                  {selectedChat?.type === "private" && (
+                    <button
+                      className="call-btn"
+                      onClick={() => {
+                        handleStartCall();
+                      }}
+                      title="Позвонить"
+                    >
+                      <svg
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                      </svg>
+                    </button>
+                  )}
+                </div>
               </div>
             </header>
             <div className="messages-container">

@@ -6,6 +6,7 @@ import RegisterUser from "./pages/RegisterUser";
 import RegisterSeller from "./pages/RegisterSeller";
 import Chat from "./pages/Chat";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import CallPage from "./pages/CallPage";
 
 function App() {
   const navigate = useNavigate();
@@ -74,6 +75,7 @@ function App() {
             <Route path="/login" element={user ? <Navigate to="/chat" /> : <Login />} />
             <Route path="/register-user" element={<RegisterUser />} />
             <Route path="/register-seller" element={<RegisterSeller />} />
+            <Route path="/call/:chatId" element={<CallPage />} />
             <Route element={<ProtectedRoute />}>
               <Route path="/chat" element={<Chat />} />
             </Route>

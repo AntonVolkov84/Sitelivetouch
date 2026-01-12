@@ -18,6 +18,7 @@ type WSContextType = {
   wsReady: boolean;
   setIsIncoming: React.Dispatch<React.SetStateAction<boolean>>;
   setIsInCall: React.Dispatch<React.SetStateAction<boolean>>;
+  stopRingtone: () => void;
 };
 
 const WSContext = createContext<WSContextType | null>(null);
@@ -93,28 +94,10 @@ export const WSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
           if (data.type === "message_new" && data.chat_id && data.sender_id !== user.id) {
             addUnread(data.chat_id);
           }
-
-          // Логика звонков (Сигналинг)
           if (["offer", "answer", "ice-candidate", "call-ended"].includes(data.type)) {
             if (data.type === "offer") {
-              const now = Date.now();
-              const serverTime = data.timestamp || now;
-              if (!isInCallRef.current && now - serverTime < 5000) {
-                const senderProfile = await getUserProfile(data.sender);
+              if (!isInCallRef.current) {
                 playRingtone();
-                setIsIncoming(true);
-
-                // Браузерный confirm (потом заменим на красивую модалку)
-                if (
-                  window.confirm(`Входящий звонок от: ${senderProfile.usersurname} ${senderProfile.username}. Принять?`)
-                ) {
-                  stopRingtone();
-                  setIsInCall(true);
-                  navigate(`/call/${data.chatId}?callerId=${data.sender}&isIncoming=true`);
-                } else {
-                  stopRingtone();
-                  setIsIncoming(false);
-                }
               }
             }
 
@@ -157,11 +140,15 @@ export const WSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     const idx = signalsQueue.current.findIndex(predicate);
     if (idx === -1) return undefined;
     const [found] = signalsQueue.current.splice(idx, 1);
+    setSignals([...signalsQueue.current]);
+
     return found;
   };
 
   return (
-    <WSContext.Provider value={{ ws, signals, consumeSignal, isIncomingWS, wsReady, setIsIncoming, setIsInCall }}>
+    <WSContext.Provider
+      value={{ ws, signals, consumeSignal, isIncomingWS, wsReady, stopRingtone, setIsIncoming, setIsInCall }}
+    >
       {children}
     </WSContext.Provider>
   );

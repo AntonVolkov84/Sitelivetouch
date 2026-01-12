@@ -159,9 +159,8 @@
   transform: scale(1.01);
 }
 
-/* Ограничение для ВИДЕО */
 .message-bubble video {
-  max-width: 550px;
+  max-width: 400px;
   border-radius: 12px;
   margin: 8px 0;
   display: block;
@@ -169,7 +168,6 @@
   background: #000;
 }
 
-/* Стили для ФАЙЛА (карточка) */
 .file-link {
   display: flex;
   align-items: center;

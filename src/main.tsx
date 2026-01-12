@@ -7,6 +7,7 @@ import { UserProvider } from "./context/UserContext";
 import { UnreadProvider } from "./context/UnreadContext";
 import { WSProvider } from "./context/WsContext";
 import { ModalProvider } from "./context/ModalContext.tsx";
+import IncomingCallModal from "./components/IncomingCallModal.tsx";
 
 createRoot(document.getElementById("root")!).render(
   <BrowserRouter>
@@ -15,6 +16,7 @@ createRoot(document.getElementById("root")!).render(
         <ModalProvider>
           <UnreadProvider>
             <WSProvider>
+              <IncomingCallModal />
               <App />
             </WSProvider>
           </UnreadProvider>

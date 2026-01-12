@@ -585,15 +585,15 @@
   opacity: 0.9;
 }
 .attach-btn {
-  background-color: #f0f2f5; /* Светло-серый фон, чтобы кнопка не пропадала */
-  border: 1px solid #e1e4e8; /* Тонкая рамка для четкости границ */
+  background-color: #f0f2f5;
+  border: 1px solid #e1e4e8;
   padding: 8px;
   margin: 0 8px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #5f6368; /* Более контрастный серый */
+  color: #5f6368;
   transition: all 0.2s ease;
   border-radius: 50%;
   width: 42px;
