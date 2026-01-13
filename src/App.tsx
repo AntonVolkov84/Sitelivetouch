@@ -7,6 +7,7 @@ import RegisterSeller from "./pages/RegisterSeller";
 import Chat from "./pages/Chat";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import CallPage from "./pages/CallPage";
+import Logo from "./assets/removebg.png";
 
 function App() {
   const navigate = useNavigate();
@@ -22,9 +23,41 @@ function App() {
   if (loading) return <div>Загрузка приложения...</div>;
   return (
     <>
+      <div
+        style={{
+          width: "100%",
+          padding: "5px 0",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          gap: "10px",
+          backgroundColor: "#f9f9f9",
+          borderBottom: "1px solid #eee",
+        }}
+      >
+        <img
+          src={Logo}
+          alt="LiveTouch Logo"
+          style={{
+            height: "32px",
+            width: "auto",
+            display: "block",
+          }}
+        />
+        <span
+          style={{
+            fontSize: "22px",
+            fontWeight: "800",
+            letterSpacing: "0.5px",
+            color: "#333",
+          }}
+        >
+          LiveTouch<span style={{ color: "#ff4d4d" }}>.chat</span>
+        </span>
+      </div>
       <nav
         style={{
-          padding: "0.8rem 2rem",
+          padding: "0.1rem 2rem",
           borderBottom: "1px solid #eee",
           display: "flex",
           justifyContent: "center",
@@ -59,7 +92,7 @@ function App() {
           display: "flex",
           flexDirection: "column",
           alignItems: isChatPage ? "flex-start" : "center",
-          paddingTop: isChatPage ? "0" : "40px",
+          paddingTop: isChatPage ? "0" : "5px",
           height: isChatPage ? "100vh" : "auto",
         }}
       >

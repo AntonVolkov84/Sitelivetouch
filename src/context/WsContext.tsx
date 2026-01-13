@@ -19,6 +19,7 @@ type WSContextType = {
   setIsIncoming: React.Dispatch<React.SetStateAction<boolean>>;
   setIsInCall: React.Dispatch<React.SetStateAction<boolean>>;
   stopRingtone: () => void;
+  playRingtone: (type?: "incoming" | "outgoing") => void;
 };
 
 const WSContext = createContext<WSContextType | null>(null);
@@ -42,13 +43,13 @@ export const WSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     isInCallRef.current = isInCall;
   }, [isInCall]);
 
-  // Управление звуком (Web Audio API)
-  const playRingtone = () => {
-    if (!ringtoneRef.current) {
-      ringtoneRef.current = new Audio("/assets/ringtone.mp3"); // Файл должен лежать в public/assets/
-      ringtoneRef.current.loop = true;
-    }
-    ringtoneRef.current.play().catch((e) => console.log("Audio play failed:", e));
+  const playRingtone = (type: "incoming" | "outgoing" = "incoming") => {
+    if (ringtoneRef.current) stopRingtone();
+    const file = type === "incoming" ? "/sounds/ringtone.mp3" : "/sounds/dialing.mp3";
+
+    ringtoneRef.current = new Audio(file);
+    ringtoneRef.current.loop = true;
+    ringtoneRef.current.play().catch((e) => console.log("Audio play blocked by browser:", e));
   };
 
   const stopRingtone = () => {
@@ -57,16 +58,6 @@ export const WSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
       ringtoneRef.current.currentTime = 0;
     }
   };
-
-  const getUserProfile = async (id: number) => {
-    try {
-      const res = await api.get(`/auth/${id}/profile`);
-      return res.data;
-    } catch (err) {
-      console.error("WS Context getUserProfile error", err);
-    }
-  };
-
   useEffect(() => {
     if (!user?.id) return;
 
@@ -85,19 +76,16 @@ export const WSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         socket?.send(JSON.stringify({ userId: user.id, type: "init" }));
         setWs(socket);
       };
-
       socket.onmessage = async (event) => {
         try {
           const data = JSON.parse(event.data);
-
-          // Новое сообщение
           if (data.type === "message_new" && data.chat_id && data.sender_id !== user.id) {
             addUnread(data.chat_id);
           }
           if (["offer", "answer", "ice-candidate", "call-ended"].includes(data.type)) {
             if (data.type === "offer") {
               if (!isInCallRef.current) {
-                playRingtone();
+                playRingtone("incoming");
               }
             }
 
@@ -140,6 +128,7 @@ export const WSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     const idx = signalsQueue.current.findIndex(predicate);
     if (idx === -1) return undefined;
     const [found] = signalsQueue.current.splice(idx, 1);
+    console.log("WS_LOG: Извлечен сигнал из очереди:", found.type, found);
     setSignals([...signalsQueue.current]);
 
     return found;
@@ -147,7 +136,17 @@ export const WSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
 
   return (
     <WSContext.Provider
-      value={{ ws, signals, consumeSignal, isIncomingWS, wsReady, stopRingtone, setIsIncoming, setIsInCall }}
+      value={{
+        ws,
+        signals,
+        consumeSignal,
+        isIncomingWS,
+        wsReady,
+        stopRingtone,
+        playRingtone,
+        setIsIncoming,
+        setIsInCall,
+      }}
     >
       {children}
     </WSContext.Provider>

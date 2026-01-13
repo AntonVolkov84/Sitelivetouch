@@ -13,7 +13,7 @@ export default function CallPage() {
   const initialOffer = location.state?.offer;
   const callerId = Number(searchParams.get("callerId"));
   const isIncoming = searchParams.get("isIncoming") === "true";
-  const { ws, consumeSignal, signals, setIsInCall } = useWS();
+  const { ws, consumeSignal, signals, setIsInCall, stopRingtone, playRingtone } = useWS();
   const { user } = useUser();
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const processedOfferRef = useRef(false);
@@ -59,17 +59,16 @@ export default function CallPage() {
       }
     }
   };
+
   useEffect(() => {
     const processInitialOffer = async () => {
       if (isIncoming && initialOffer && !processedOfferRef.current && ws?.readyState === WebSocket.OPEN) {
         processedOfferRef.current = true;
+        stopRingtone();
         try {
-          console.log("Устанавливаем RemoteDescription (Offer)");
           await pc.current.setRemoteDescription(new RTCSessionDescription(initialOffer));
-
           const answer = await pc.current.createAnswer();
           await pc.current.setLocalDescription(answer);
-
           ws.send(
             JSON.stringify({
               type: "answer",
@@ -94,6 +93,7 @@ export default function CallPage() {
   }, [localStream, ws, ws?.readyState, initialOffer]);
   useEffect(() => {
     pc.current.ontrack = (event) => {
+      stopRingtone();
       if (remoteVideoRef.current && event.streams[0]) {
         remoteVideoRef.current.srcObject = event.streams[0];
       }
@@ -111,10 +111,14 @@ export default function CallPage() {
         );
       }
     };
+    if (!isIncoming) {
+      playRingtone("outgoing");
+    }
     initLocalStream();
     setIsInCall(true);
     return () => {
       setIsInCall(false);
+      stopRingtone();
     };
   }, []);
 
@@ -133,6 +137,7 @@ export default function CallPage() {
           );
         }
         if (signal.type === "answer") {
+          stopRingtone();
           await pc.current.setRemoteDescription(new RTCSessionDescription(signal.answer));
           while (remoteIceCandidatesBuffer.current.length > 0) {
             const cand = remoteIceCandidatesBuffer.current.shift();
@@ -185,6 +190,7 @@ export default function CallPage() {
   };
 
   const endCall = (sendSignal = true) => {
+    stopRingtone();
     if (sendSignal && ws && user) {
       ws.send(JSON.stringify({ type: "call-ended", chatId: Number(chatId), sender: user.id, target: callerId }));
     }
@@ -196,7 +202,7 @@ export default function CallPage() {
   };
 
   return (
-    <div className="call-page" style={{ height: "100vh", background: "#000", color: "#fff", position: "relative" }}>
+    <div className="call-page" style={{ height: "90vh", background: "#000", color: "#fff", position: "relative" }}>
       <button
         onClick={handleBack}
         style={{
