@@ -3,6 +3,7 @@ import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { useWS } from "../context/WsContext";
 import { useUser } from "../context/UserContext";
 import { useLocation } from "react-router-dom";
+import { logError } from "../utils/logger";
 
 export default function CallPage() {
   const { chatId } = useParams();
@@ -10,17 +11,11 @@ export default function CallPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const initialOffer = location.state?.offer;
-
   const callerId = Number(searchParams.get("callerId"));
   const isIncoming = searchParams.get("isIncoming") === "true";
-
   const { ws, consumeSignal, signals, setIsInCall } = useWS();
   const { user } = useUser();
-
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
-  const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
-  const [isCallProcessing, setIsCallProcessing] = useState(false);
-  const [isAnswered, setIsAnswered] = useState(false);
   const processedOfferRef = useRef(false);
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
@@ -59,11 +54,13 @@ export default function CallPage() {
       }
     } catch (err) {
       console.error("Error getting local stream:", err);
+      if (user) {
+        await logError(user.email, "WEB Call page: initLocalStream", err);
+      }
     }
   };
   useEffect(() => {
     const processInitialOffer = async () => {
-      // Добавляем проверку processedOfferRef
       if (isIncoming && initialOffer && !processedOfferRef.current && ws?.readyState === WebSocket.OPEN) {
         processedOfferRef.current = true;
         try {
@@ -82,11 +79,6 @@ export default function CallPage() {
               chatId: Number(chatId),
             })
           );
-
-          setIsCallProcessing(true);
-
-          // ВАЖНО: Прокидываем накопившиеся ICE-кандидаты
-          console.log("Добавляем кандидаты из буфера:", remoteIceCandidatesBuffer.current.length);
           while (remoteIceCandidatesBuffer.current.length > 0) {
             const cand = remoteIceCandidatesBuffer.current.shift();
             if (cand) await pc.current.addIceCandidate(cand);
@@ -96,7 +88,6 @@ export default function CallPage() {
         }
       }
     };
-
     if (localStream && ws) {
       processInitialOffer();
     }
@@ -120,10 +111,8 @@ export default function CallPage() {
         );
       }
     };
-
     initLocalStream();
     setIsInCall(true);
-
     return () => {
       setIsInCall(false);
     };
@@ -142,7 +131,6 @@ export default function CallPage() {
           ws?.send(
             JSON.stringify({ type: "answer", target: callerId, sender: user!.id, answer, chatId: Number(chatId) })
           );
-          setIsCallProcessing(true);
         }
         if (signal.type === "answer") {
           await pc.current.setRemoteDescription(new RTCSessionDescription(signal.answer));
@@ -158,7 +146,6 @@ export default function CallPage() {
             remoteIceCandidatesBuffer.current.push(signal.candidate);
           }
         }
-
         if (signal.type === "call-ended") {
           endCall(false);
         }
@@ -166,7 +153,6 @@ export default function CallPage() {
         console.error("Signal error:", err);
       }
     };
-
     handleSignals();
   }, [signals]);
 
@@ -176,7 +162,6 @@ export default function CallPage() {
       return;
     }
     try {
-      setIsCallProcessing(true);
       const offer = await pc.current.createOffer();
       await pc.current.setLocalDescription(offer);
       const message = {
@@ -188,19 +173,15 @@ export default function CallPage() {
       };
       ws.send(JSON.stringify(message));
     } catch (err) {
+      if (user) {
+        await logError(user.email, "WEB Call page: startCall", err);
+      }
       console.error("Ошибка в startCall:", err);
     }
   };
 
   const handleBack = () => {
-    if (localStream) {
-      localStream.getTracks().forEach((track) => track.stop());
-    }
-    if (pc.current) {
-      pc.current.close();
-    }
-    setIsInCall(false);
-    navigate("/chat");
+    endCall(true);
   };
 
   const endCall = (sendSignal = true) => {
@@ -209,7 +190,9 @@ export default function CallPage() {
     }
     localStream?.getTracks().forEach((t) => t.stop());
     pc.current.close();
-    navigate("/");
+    setTimeout(() => {
+      navigate("/chat");
+    }, 50);
   };
 
   return (
