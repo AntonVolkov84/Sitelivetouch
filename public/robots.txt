@@ -1,0 +1,6 @@
+User-agent: *
+Disallow: /chat
+Disallow: /call/
+Disallow: /register-seller
+Allow: /
+Allow: /login

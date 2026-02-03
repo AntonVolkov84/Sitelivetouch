@@ -13,6 +13,7 @@ export type UserAuthData = {
   usersurname: string;
   public_key: string;
   phone: string;
+  role?: string;
 };
 export type RegisterFormData = {
   username: string;
@@ -94,7 +95,7 @@ export type ImagePickerAsset = {
   mimeType?: string | null;
   duration?: number | null;
 };
-type MediaType = "image" | "video";
+
 export type EncryptedData = {
   encryptedImage: Uint8Array;
   nonceImage: string;
@@ -102,3 +103,11 @@ export type EncryptedData = {
   nonceSymmetricKey: string;
 };
 export type PushData = { chatId: number; callerId: number; callerName: string; isIncoming: boolean; type?: string };
+export interface IProduct {
+  id: number;
+  name: string;
+  price: string;
+  description: string;
+  quantities: string;
+  image_url?: string;
+}

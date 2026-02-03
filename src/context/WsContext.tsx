@@ -1,11 +1,16 @@
 import React, { createContext, useContext, useEffect, useState, useRef } from "react";
 import { useUser } from "./UserContext";
 import { useUnread } from "./UnreadContext";
-import { api } from "../../axiosinstance";
-import { useNavigate } from "react-router-dom";
 
 type SignalMessage =
-  | { type: "offer"; sender: number; chatId: number; offer: RTCSessionDescriptionInit; timestamp?: number }
+  | {
+      type: "offer";
+      sender: number;
+      chatId: number;
+      offer: RTCSessionDescriptionInit;
+      timestamp?: number;
+      callerName: string;
+    }
   | { type: "answer"; sender: number; chatId: number; answer: RTCSessionDescriptionInit }
   | { type: "ice-candidate"; sender: number; chatId: number; candidate: RTCIceCandidateInit }
   | { type: "call-ended"; sender: number; chatId: number };
@@ -27,8 +32,6 @@ const WSContext = createContext<WSContextType | null>(null);
 export const WSProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useUser();
   const { addUnread } = useUnread();
-  const navigate = useNavigate();
-
   const [ws, setWs] = useState<WebSocket | null>(null);
   const [wsReady, setWsReady] = useState(false);
   const [isIncomingWS, setIsIncoming] = useState(false);
@@ -43,13 +46,25 @@ export const WSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     isInCallRef.current = isInCall;
   }, [isInCall]);
 
-  const playRingtone = (type: "incoming" | "outgoing" = "incoming") => {
+  const playRingtone = async (type: "incoming" | "outgoing" = "incoming") => {
     if (ringtoneRef.current) stopRingtone();
-    const file = type === "incoming" ? "/sounds/ringtone.mp3" : "/sounds/dialing.mp3";
 
-    ringtoneRef.current = new Audio(file);
-    ringtoneRef.current.loop = true;
-    ringtoneRef.current.play().catch((e) => console.log("Audio play blocked by browser:", e));
+    const file = type === "incoming" ? "/sounds/ringtone.mp3" : "/sounds/dialing.mp3";
+    const audio = new Audio(file);
+    audio.loop = true;
+    ringtoneRef.current = audio;
+    try {
+      await audio.play();
+      console.log(`Звук ${type} запущен успешно`);
+    } catch (e) {
+      console.warn("Автовоспроизведение заблокировано. Ожидание взаимодействия...", e);
+      const playOnce = () => {
+        audio.play().catch((err) => console.error("Все еще заблокировано:", err));
+        window.removeEventListener("click", playOnce);
+      };
+
+      window.addEventListener("click", playOnce);
+    }
   };
 
   const stopRingtone = () => {
@@ -88,7 +103,14 @@ export const WSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
                 playRingtone("incoming");
               }
             }
-
+            if (data.type === "answer") {
+              stopRingtone();
+              if (!isInCallRef.current) {
+                setSignals((prev) => prev.filter((s) => s.type !== "offer"));
+                signalsQueue.current = signalsQueue.current.filter((s) => s.type !== "offer");
+                return;
+              }
+            }
             if (data.type === "call-ended") {
               stopRingtone();
               setIsIncoming(false);

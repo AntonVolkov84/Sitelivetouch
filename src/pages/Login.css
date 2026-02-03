@@ -94,12 +94,18 @@
 }
 
 .login-card__divider {
+  box-sizing: border-box;
   text-align: center;
   border-bottom: 1px solid #eee;
-  line-height: 0.1em;
+  padding-bottom: 20px;
   margin: 10px 0 25px;
   color: #999;
   font-size: 0.9rem;
+}
+.login-card__divider-info {
+  width: 100%;
+  padding: 0 50px;
+  height: fit-content;
 }
 
 .login-card__divider span {

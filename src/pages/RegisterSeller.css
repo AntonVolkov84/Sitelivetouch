@@ -1,0 +1,466 @@
+/* Общий контейнер страницы */
+.register-seller-page {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 20px;
+  padding-bottom: 40px;
+  min-height: 100vh;
+  width: 100%;
+}
+
+.seller-dashboard-layout {
+  display: flex;
+  width: 100%;
+  height: calc(100vh - 95px);
+  position: relative;
+  top: 0;
+  left: 0;
+  z-index: 100;
+  background: #f5f7f9;
+}
+.seller-dashboard__sidebar {
+  width: 320px;
+  min-width: 320px;
+  background: white;
+  border-right: 1px solid #e0e6ed;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  box-sizing: border-box;
+  overflow-y: auto; /* Внутренний скролл для настроек и карты */
+}
+.seller-dashboard__content {
+  flex-grow: 1;
+  padding: 30px;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+.sidebar-map-container {
+  height: 200px; /* Делаем её ниже, чем при регистрации */
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #dcdfe6;
+  margin-top: 5px;
+}
+
+.location-hint {
+  font-size: 0.75rem;
+  color: #909399;
+  margin-top: 5px;
+  font-style: italic;
+}
+
+/* Настраиваем скролл сайдбара, так как контента стало больше */
+.seller-dashboard__sidebar {
+  overflow-y: auto;
+}
+/* Убери или перебьй старый .register-seller-page, если он мешает */
+
+.seller-form-container {
+  background: #fff;
+  width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  padding: 25px;
+}
+
+.seller-form-container__title {
+  font-size: 1.5rem;
+  margin-bottom: 20px;
+  text-align: center;
+  color: #333;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 15px;
+}
+
+.seller-form-step {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  height: auto;
+  animation: fadeIn 0.3s ease-in-out;
+  overflow-y: auto;
+  padding-right: 10px;
+}
+
+.seller-form-step__text {
+  font-size: 0.95rem;
+  color: #666;
+  line-height: 1.4;
+}
+
+/* Поля ввода (Инпуты) */
+.seller-form-input,
+.seller-form-textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.seller-form-input:focus {
+  border-color: #007bff;
+}
+
+.seller-form-row {
+  display: flex;
+  gap: 10px;
+}
+
+.seller-form-input--half {
+  flex: 1;
+}
+
+.seller-form-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* Кнопки */
+.seller-form-btn {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.seller-form-btn:hover {
+  background: #0056b3;
+}
+
+.seller-form-btn--submit {
+  background: #28a745;
+  margin-top: 10px;
+}
+
+.seller-form-btn--submit:hover {
+  background: #218838;
+}
+
+/* Информационный бокс для Telegram */
+.telegram-info-box {
+  background: #f0f7ff;
+  border: 1px dashed #007bff;
+  padding: 15px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: #0056b3;
+}
+
+.telegram-info-box p {
+  margin-bottom: 8px;
+}
+
+/* Селектор геопозиции (заглушка) */
+.geohash-selector {
+  background: #f8f9fa;
+  border: 2px dashed #ccc;
+  padding: 20px;
+  text-align: center;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #888;
+  font-size: 0.9rem;
+}
+
+.geohash-selector:hover {
+  border-color: #007bff;
+  color: #007bff;
+}
+.seller-form-container::-webkit-scrollbar {
+  width: 6px;
+}
+.seller-form-container::-webkit-scrollbar-thumb {
+  background-color: #ccc;
+  border-radius: 10px;
+}
+.seller-dashboard {
+  display: flex;
+  height: calc(100vh - 60px); /* Вычитаем высоту хедера, если он есть */
+  background: #f5f7f9;
+}
+
+/* Стили левой панели (Aside) */
+.seller-dashboard__sidebar {
+  width: 320px;
+  background: white;
+  border-right: 1px solid #e0e6ed;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+}
+
+.seller-sidebar-header h3 {
+  margin-bottom: 25px;
+  color: #2c3e50;
+  font-size: 1.1rem;
+}
+
+.setting-group {
+  margin-bottom: 18px;
+}
+
+.setting-group label {
+  display: block;
+  font-size: 0.85rem;
+  color: #7f8c8d;
+  margin-bottom: 6px;
+}
+
+.sidebar-input,
+.setting-group textarea,
+.time-row input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #dcdfe6;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.time-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.save-settings-btn {
+  background: #3498db;
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-top: 10px;
+  width: 100%;
+}
+
+/* Стили правой панели (Content) */
+.seller-dashboard__content {
+  flex: 1;
+  padding: 30px;
+  overflow-y: auto;
+}
+
+.content-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.add-product-btn {
+  background: #27ae60;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 500;
+}
+.product-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999; /* Максимальный приоритет */
+}
+.product-modal-content {
+  background: white;
+  padding: 30px;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  position: relative; /* Чтобы контент не терялся */
+  z-index: 10000;
+}
+
+.image-upload-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.img-preview {
+  width: 200px;
+  height: 150px;
+  object-fit: contain;
+  border-radius: 10px;
+}
+.img-placeholder {
+  width: 150px;
+  height: 150px;
+  background: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+}
+
+.inputs-section input,
+.inputs-section textarea {
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}
+.product-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.btn-save {
+  background: #27ae60;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.btn-cancel {
+  background: #e74c3c;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* Скрываем стандартный input file, так как мы используем label как кнопку */
+#file-input {
+  display: none;
+}
+
+.file-label {
+  display: inline-block;
+  background: #3498db;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.product-card {
+  background: white;
+  border-radius: 12px;
+  padding: 15px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s;
+}
+
+.product-card:hover {
+  transform: translateY(-5px);
+}
+
+.product-card img {
+  width: 100%;
+  height: 150px;
+  object-fit: contain;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+.product-card h4 {
+  margin: 5px 0;
+  font-size: 1rem;
+  color: #333;
+}
+
+.product-card .price {
+  font-weight: bold;
+  color: #27ae60;
+  font-size: 1.1rem;
+}
+
+.product-card .qty {
+  font-size: 0.85rem;
+  color: #7f8c8d;
+}
+
+.delete-btn {
+  margin-top: 10px;
+  background: #ffeded;
+  color: #e74c3c;
+  border: 1px solid #ffcdd2;
+  padding: 5px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.product-card-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* Две равные колонки */
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.edit-btn {
+  padding: 8px;
+  background-color: #e6f7ff;
+  color: #1890ff;
+  border: 1px solid #91d5ff;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: 0.3s;
+}
+
+.edit-btn:hover {
+  background-color: #1890ff;
+  color: white;
+}
+.delete-btn {
+  padding: 8px;
+  background-color: #e6f7ff;
+  color: #1890ff;
+  border: 1px solid #91d5ff;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: 0.5s;
+}
+
+.delete-btn:hover {
+  background-color: red;
+  color: white;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

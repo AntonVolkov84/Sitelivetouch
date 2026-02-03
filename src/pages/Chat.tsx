@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { type Chat, type DecryptedMessage } from "../types";
 import { api } from "../../axiosinstance";
@@ -28,7 +28,7 @@ export default function Chat() {
   const [selectedMessage, setSelectedMessage] = useState<DecryptedMessage | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; msg: DecryptedMessage } | null>(null);
-  const [viewedProfileId, setViewedProfileId] = useState<number | null>(null);
+  const [, setViewedProfileId] = useState<number | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isParticipantsModalOpen, setIsParticipantsModalOpen] = useState(false);
   const [participants, setParticipants] = useState<any[]>([]);
@@ -173,7 +173,7 @@ export default function Chat() {
   };
   const getParticipantPublicKey = async (
     chat_id: number,
-    participant_id: number | undefined
+    participant_id: number | undefined,
   ): Promise<string | null> => {
     if (!participant_id) return null;
     try {
@@ -196,15 +196,15 @@ export default function Chat() {
       const { privateKey } = keyPair;
       const { chat_id, type: chat_type } = selectedChat;
       // ==== PRIVATE CHAT ====
-      let rawKey: string | null | undefined = selectedChat.otherUser?.public_key;
-      if (!rawKey) {
-        const otherUserId = selectedChat.otherUser?.id;
-        if (otherUserId) {
-          rawKey = await getParticipantPublicKey(chat_id, otherUserId);
-        }
-      }
-      if (!rawKey) return showAlert("Ошибка", "Не удалось получить ключ");
       if (chat_type === "private" && selectedChat) {
+        let rawKey: string | null | undefined = selectedChat.otherUser?.public_key;
+        if (!rawKey) {
+          const otherUserId = selectedChat.otherUser?.id;
+          if (otherUserId) {
+            rawKey = await getParticipantPublicKey(chat_id, otherUserId);
+          }
+        }
+        if (!rawKey) return showAlert("Ошибка", "Не удалось получить ключ");
         const theirPublicKeyUint8 = decodeBase64(rawKey);
         const { ciphertext, nonce } = encryptMessage(inputText, theirPublicKeyUint8, privateKey);
         await api.put(`/chats/message/${selectedMessage.id}`, {
@@ -244,7 +244,7 @@ export default function Chat() {
           alert("Не удалось удалить сообщение.");
         }
       },
-      "Продолжить"
+      "Продолжить",
     );
   };
   useEffect(() => {
@@ -301,13 +301,17 @@ export default function Chat() {
           let target = m;
           if (Array.isArray(m.messages)) {
             target = m.messages.find((sub: any) => Number(sub.user_id) === Number(user.id));
+          } else {
+            if (Number(m.recipient_id) !== Number(user.id)) {
+              return null;
+            }
           }
 
-          if (!target || !target.ciphertext) return { ...m, text: "[Сообщение недоступно]" };
+          if (!target || !target.ciphertext) return null;
 
           try {
             const senderPub = target.sender_public_key;
-            if (!senderPub) return { ...target, text: "[Ключ отправителя не найден]" };
+            if (!senderPub) return null;
             const text = decryptMessage(target.ciphertext, target.nonce, keyPair.privateKey, decodeBase64(senderPub));
             return { ...target, text };
           } catch (err) {
@@ -315,7 +319,7 @@ export default function Chat() {
           }
         });
       }
-      setMessages(decrypted.filter((m) => m !== null));
+      setMessages(decrypted.filter((m) => m !== null).reverse());
     } catch (err) {
       console.error("Load messages error:", err);
     }
@@ -379,7 +383,7 @@ export default function Chat() {
       if (chat_type === "group") {
         const participantsRes = await api.get(`/chats/${chat_id}/participants`);
         const participants = participantsRes.data;
-
+        console.log("Participant", participants);
         const encryptedPerUser = participants.map((p: any) => {
           const publicKeyUint8 = decodeBase64(p.public_key);
           const { ciphertext, nonce } = encryptMessage(textToSend, publicKeyUint8, privateKey);
@@ -530,7 +534,7 @@ export default function Chat() {
           if (selectedChat?.type === "group" && Array.isArray(data.messages)) {
             if (!user) return;
             const myCopy = data.messages.find(
-              (m: any) => Number(m.recipient_id || m.user_id) === Number(user.id) && m.ciphertext
+              (m: any) => Number(m.recipient_id || m.user_id) === Number(user.id) && m.ciphertext,
             );
 
             if (myCopy) {
@@ -553,7 +557,7 @@ export default function Chat() {
                       return { ...msg, ...myCopy, text: decryptedText };
                     }
                     return msg;
-                  })
+                  }),
                 );
               } catch (err) {
                 console.error("Group decryption error during update:", err);
@@ -618,7 +622,7 @@ export default function Chat() {
           showAlert("Ошибка", "Не удалось удалить чат");
         }
       },
-      "Покинуть"
+      "Покинуть",
     );
   };
 
@@ -813,79 +817,100 @@ export default function Chat() {
               ))}
             </div>
             <footer className="input-area">
-              <button
-                type="button"
-                className="attach-btn"
-                onClick={() => document.getElementById("file-upload")!.click()}
-                title="Прикрепить файл"
-              >
-                <svg
-                  width="22"
-                  height="22"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+              {editMode && (
+                <div className="edit-indicator-bar">
+                  <div className="edit-info">
+                    <span className="edit-label">Редактирование</span>
+                    <span className="edit-text-preview">{selectedMessage?.text}</span>
+                  </div>
+                  <button
+                    className="cancel-edit-btn"
+                    onClick={() => {
+                      setEditMode(false);
+                      setSelectedMessage(null);
+                      setInputText("");
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+              <div className="input-area-block">
+                <button
+                  type="button"
+                  className="attach-btn"
+                  onClick={() => document.getElementById("file-upload")!.click()}
+                  title="Прикрепить файл"
                 >
-                  <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
-                </svg>
-              </button>
-              <textarea
-                className="message-input multiline"
-                placeholder="Введите сообщение..."
-                rows={1}
-                value={inputText}
-                onChange={(e) => {
-                  setInputText(cleanInput(e.target.value));
-                  e.target.style.height = "auto";
-                  e.target.style.height = `${e.target.scrollHeight}px`;
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
+                  <svg
+                    width="22"
+                    height="22"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                  </svg>
+                </button>
+
+                <textarea
+                  className="message-input multiline"
+                  placeholder="Введите сообщение..."
+                  rows={1}
+                  value={inputText}
+                  onChange={(e) => {
+                    setInputText(cleanInput(e.target.value));
+                    e.target.style.height = "auto";
+                    e.target.style.height = `${e.target.scrollHeight}px`;
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      if (inputText.trim()) {
+                        handleSendWeb(inputText);
+                        setInputText("");
+                        e.currentTarget.style.height = "auto";
+                      }
+                    }
+                  }}
+                />
+                <input
+                  type="file"
+                  id="file-upload"
+                  style={{ display: "none" }}
+                  onChange={(e) => handleFileSelect(e)}
+                  accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.zip"
+                />
+
+                <button
+                  className="send-button"
+                  onClick={() => {
                     if (inputText.trim()) {
                       handleSendWeb(inputText);
                       setInputText("");
-                      e.currentTarget.style.height = "auto";
                     }
-                  }
-                }}
-              />
-              <input
-                type="file"
-                id="file-upload"
-                style={{ display: "none" }}
-                onChange={(e) => handleFileSelect(e)}
-                accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.zip"
-              />
-
-              <button
-                className="send-button"
-                onClick={() => {
-                  if (inputText.trim()) {
-                    handleSendWeb(inputText);
-                    setInputText("");
-                  }
-                }}
-                aria-label="Отправить"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  width="20"
-                  height="20"
-                  fill="none"
-                  style={{ transform: "translateY(1px)" }}
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+                  }}
+                  aria-label="Отправить"
                 >
-                  <line x1="22" y1="2" x2="11" y2="13"></line>
-                  <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                </svg>
-              </button>
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="20"
+                    height="20"
+                    fill="none"
+                    style={{ transform: "translateY(1px)" }}
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                  </svg>
+                </button>
+              </div>
             </footer>
           </div>
         ) : (

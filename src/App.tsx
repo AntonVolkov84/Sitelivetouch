@@ -8,13 +8,15 @@ import Chat from "./pages/Chat";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import CallPage from "./pages/CallPage";
 import Logo from "./assets/removebg.png";
+import NotFound from "./pages/NotFound";
 
 function App() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, setUser, loading } = useUser();
 
-  const isChatPage = location.pathname === "/chat";
+  const isFullWidthPage =
+    location.pathname === "/chat" || (location.pathname === "/register-seller" && user?.role === "seller");
 
   const handleLogout = () => {
     setUser(null);
@@ -72,6 +74,11 @@ function App() {
         <Link to="/chat" style={navLinkStyle}>
           Чат
         </Link>
+        {user && (
+          <Link to="/register-seller" style={navLinkStyle}>
+            Продавцам
+          </Link>
+        )}
 
         <div style={{ display: "flex", alignItems: "center" }}>
           {user ? (
@@ -91,16 +98,16 @@ function App() {
           width: "100%",
           display: "flex",
           flexDirection: "column",
-          alignItems: isChatPage ? "flex-start" : "center",
-          paddingTop: isChatPage ? "0" : "5px",
-          height: isChatPage ? "100vh" : "auto",
+          alignItems: isFullWidthPage ? "flex-start" : "center",
+          paddingTop: isFullWidthPage ? "0" : "5px",
+          height: isFullWidthPage ? "100vh" : "auto",
         }}
       >
         <div
           style={{
             width: "100%",
-            maxWidth: isChatPage ? "100%" : "600px",
-            height: isChatPage ? "100%" : "auto",
+            maxWidth: isFullWidthPage ? "100%" : "600px",
+            height: isFullWidthPage ? "100%" : "auto",
           }}
         >
           <Routes>
@@ -113,7 +120,7 @@ function App() {
               <Route path="/chat" element={<Chat />} />
             </Route>
 
-            <Route path="*" element={<Navigate to="/login" />} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </div>
       </main>

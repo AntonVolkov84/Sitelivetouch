@@ -31,7 +31,7 @@ export default function CallPage() {
           credential: "mypassword",
         },
       ],
-    })
+    }),
   );
 
   const initLocalStream = async () => {
@@ -44,12 +44,13 @@ export default function CallPage() {
       if (localVideoRef.current) localVideoRef.current.srcObject = stream;
       stream
         .getTracks()
-        .sort((a, b) => (a.kind === "audio" ? -1 : 1))
+        .sort((a, _) => (a.kind === "audio" ? -1 : 1))
         .forEach((track) => {
           console.log(`Отправляем трек в PC: ${track.kind}`);
           pc.current.addTrack(track, stream);
         });
       if (!isIncoming) {
+        playRingtone("outgoing");
         startCall();
       }
     } catch (err) {
@@ -76,7 +77,7 @@ export default function CallPage() {
               sender: user!.id,
               answer,
               chatId: Number(chatId),
-            })
+            }),
           );
           while (remoteIceCandidatesBuffer.current.length > 0) {
             const cand = remoteIceCandidatesBuffer.current.shift();
@@ -107,13 +108,11 @@ export default function CallPage() {
             sender: user.id,
             candidate: event.candidate,
             chatId: Number(chatId),
-          })
+          }),
         );
       }
     };
-    if (!isIncoming) {
-      playRingtone("outgoing");
-    }
+
     initLocalStream();
     setIsInCall(true);
     return () => {
@@ -133,7 +132,7 @@ export default function CallPage() {
           const answer = await pc.current.createAnswer();
           await pc.current.setLocalDescription(answer);
           ws?.send(
-            JSON.stringify({ type: "answer", target: callerId, sender: user!.id, answer, chatId: Number(chatId) })
+            JSON.stringify({ type: "answer", target: callerId, sender: user!.id, answer, chatId: Number(chatId) }),
           );
         }
         if (signal.type === "answer") {

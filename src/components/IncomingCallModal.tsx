@@ -20,11 +20,12 @@ export default function IncomingCallModal() {
     stopRingtone();
     consumeSignal((s) => s.type === "offer");
   };
+
   return (
     <div className="call-modal-overlay">
       <div className="call-modal-container">
         <h3>Входящий звонок</h3>
-        <p>Пользователь #{incomingOffer.sender}</p>
+        <p>Пользователь {incomingOffer.callerName}</p>
 
         <div className="call-modal-buttons">
           <button className="btn-accept" onClick={handleAccept}>
