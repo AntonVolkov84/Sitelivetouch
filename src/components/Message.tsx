@@ -52,8 +52,14 @@ export default function Message({ message, isMe, onPressProfile, onContextMenu }
           {new Date(
             message.updated_at && new Date(message.updated_at).getTime() - new Date(message.created_at).getTime() > 1000
               ? message.updated_at
-              : message.created_at
+              : message.created_at,
           ).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+          {", "}
+          {new Date(
+            message.updated_at && new Date(message.updated_at).getTime() - new Date(message.created_at).getTime() > 1000
+              ? message.updated_at
+              : message.created_at,
+          ).toLocaleDateString([], { day: "numeric", month: "short" })}
         </div>
       </div>
     </div>
