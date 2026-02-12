@@ -33,11 +33,12 @@ export default function Chat() {
   const [isParticipantsModalOpen, setIsParticipantsModalOpen] = useState(false);
   const [participants, setParticipants] = useState<any[]>([]);
   const [newUserEmail, setNewUserEmail] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
 
   const navigate = useNavigate();
   const { ws } = useWS() || {};
   const cleanInput = (text: string) => text.replace(/<\/?[^>]+(>|$)/g, "");
-
   const handleStartCall = () => {
     if (!selectedChat || !selectedChat.otherUser) return;
     navigate(`/call/${selectedChat.chat_id}?callerId=${selectedChat.otherUser.id}&isIncoming=false`);
@@ -48,41 +49,71 @@ export default function Chat() {
     const file = event.target.files[0];
     if (!file) return;
     const MAX_SIZE = 20 * 1024 * 1024;
-    if (file.size > MAX_SIZE) {
+    const isProgrammer = user?.email === "antvolkov84@gmail.com";
+    if (file.size > MAX_SIZE && !isProgrammer) {
       alert("Файл слишком большой. Максимальный размер — 20 МБ.");
       return;
     }
-    await uploadFileWeb(file);
-    event.target.value = "";
+    try {
+      setIsUploading(true);
+      setUploadProgress(1);
+      await uploadFileWeb(file);
+    } catch (err: any) {
+      if (user) {
+        logError(user.email, "Web Chat: markAsRead", err.response?.data || err.message);
+      }
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(0);
+      event.target.value = "";
+    }
   };
   const uploadFileWeb = async (file: File) => {
     const mime = file.type;
     let bucket = "files";
+    let finalFilename = "";
     if (mime.startsWith("image/")) bucket = "photos";
     else if (mime.startsWith("video/")) bucket = "video";
     else if (mime.startsWith("audio/")) bucket = "voice";
-    const fileExt = file.name.split(".").pop();
-    const uniqueName = `${Date.now()}-${Math.floor(Math.random() * 1e9)}.${fileExt}`;
-
+    if (bucket !== "files") {
+      const fileExt = file.name.split(".").pop();
+      finalFilename = `${Date.now()}-${Math.floor(Math.random() * 1e9)}.${fileExt}`;
+    } else {
+      finalFilename = file.name.replace(/\s+/g, "_");
+    }
     const formData = new FormData();
     formData.append("file", file);
     formData.append("bucket", bucket);
-    formData.append("filename", uniqueName);
-    try {
-      const response = await fetch("https://api.livetouch.chat/upload", {
-        method: "POST",
-        body: formData,
-      });
+    formData.append("filename", finalFilename);
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", "https://api.livetouch.chat/upload");
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          const percentComplete = Math.round((event.loaded / event.total) * 100);
+          setUploadProgress(percentComplete);
+        }
+      };
+      xhr.onload = async () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const data = JSON.parse(xhr.responseText);
+            if (selectedChat) {
+              await addFileRecord(selectedChat.chat_id, bucket, finalFilename);
+              handleSendWeb(data.url);
+            }
+            resolve(data);
+          } catch (e) {
+            reject(new Error("Ошибка парсинга ответа"));
+          }
+        } else {
+          reject(new Error("Ошибка загрузки: " + xhr.status));
+        }
+      };
 
-      if (!response.ok) throw new Error("Upload failed");
-      const data = await response.json();
-      if (!selectedChat) return;
-      await addFileRecord(selectedChat.chat_id, bucket, uniqueName);
-      handleSendWeb(data.url);
-    } catch (err: any) {
-      console.error("Upload error:", err.message);
-      alert("Ошибка при загрузке файла");
-    }
+      xhr.onerror = () => reject(new Error("Сетевая ошибка"));
+      xhr.send(formData);
+    });
   };
   const addFileRecord = async (chatId: number, bucket: string, fileName: string) => {
     try {
@@ -96,7 +127,6 @@ export default function Chat() {
         bucket: bucket,
         file_name: fileName,
       });
-      console.log("Запись о файле успешно добавлена в БД");
     } catch (err: any) {
       console.error("Ошибка при записи файла в БД:", err.response?.data || err.message);
     }
@@ -836,47 +866,63 @@ export default function Chat() {
                 </div>
               )}
               <div className="input-area-block">
-                <button
-                  type="button"
-                  className="attach-btn"
-                  onClick={() => document.getElementById("file-upload")!.click()}
-                  title="Прикрепить файл"
-                >
-                  <svg
-                    width="22"
-                    height="22"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
+                {uploadProgress > 0 ? (
+                  <div style={{ width: "100%", background: "#eee", borderRadius: "5px", margin: "10px 0" }}>
+                    <div
+                      style={{
+                        width: `${uploadProgress}%`,
+                        height: "10px",
+                        background: "#4caf50",
+                        borderRadius: "5px",
+                        transition: "width 0.3s ease",
+                      }}
+                    />
+                    <span style={{ fontSize: "12px" }}>Загрузка: {uploadProgress}%</span>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    className="attach-btn"
+                    onClick={() => document.getElementById("file-upload")!.click()}
+                    title="Прикрепить файл"
                   >
-                    <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
-                  </svg>
-                </button>
-
-                <textarea
-                  className="message-input multiline"
-                  placeholder="Введите сообщение..."
-                  rows={1}
-                  value={inputText}
-                  onChange={(e) => {
-                    setInputText(cleanInput(e.target.value));
-                    e.target.style.height = "auto";
-                    e.target.style.height = `${e.target.scrollHeight}px`;
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      if (inputText.trim()) {
-                        handleSendWeb(inputText);
-                        setInputText("");
-                        e.currentTarget.style.height = "auto";
+                    <svg
+                      width="22"
+                      height="22"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                    </svg>
+                  </button>
+                )}
+                {uploadProgress > 0 ? null : (
+                  <textarea
+                    className="message-input multiline"
+                    placeholder="Введите сообщение..."
+                    rows={1}
+                    value={inputText}
+                    onChange={(e) => {
+                      setInputText(cleanInput(e.target.value));
+                      e.target.style.height = "auto";
+                      e.target.style.height = `${e.target.scrollHeight}px`;
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        if (inputText.trim()) {
+                          handleSendWeb(inputText);
+                          setInputText("");
+                          e.currentTarget.style.height = "auto";
+                        }
                       }
-                    }
-                  }}
-                />
+                    }}
+                  />
+                )}
                 <input
                   type="file"
                   id="file-upload"

@@ -81,7 +81,6 @@ export default function RegisterSeller() {
         try {
           const res = await api.get("/seller/profile");
           if (res.data.success) {
-            console.log(res.data);
             setFormData(res.data.profile);
           }
         } catch (err: any) {

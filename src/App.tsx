@@ -9,6 +9,7 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import CallPage from "./pages/CallPage";
 import Logo from "./assets/removebg.png";
 import NotFound from "./pages/NotFound";
+import NearbyShopsList from "./components/NearbyShopsList";
 
 function App() {
   const navigate = useNavigate();
@@ -16,7 +17,9 @@ function App() {
   const { user, setUser, loading } = useUser();
 
   const isFullWidthPage =
-    location.pathname === "/chat" || (location.pathname === "/register-seller" && user?.role === "seller");
+    location.pathname === "/chat" ||
+    location.pathname === "/nearby" ||
+    (location.pathname === "/register-seller" && user?.role === "seller");
 
   const handleLogout = () => {
     setUser(null);
@@ -62,14 +65,17 @@ function App() {
           padding: "0.1rem 2rem",
           borderBottom: "1px solid #eee",
           display: "flex",
-          justifyContent: "center",
+          justifyContent: "space-around",
           alignItems: "center",
           gap: "20px",
           backgroundColor: "white",
         }}
       >
+        <Link to="/nearby" style={{ ...navLinkStyle, color: "#ff4d4d" }}>
+          📍 Рядом
+        </Link>
         <Link to="/" style={navLinkStyle}>
-          Home
+          Домашняя
         </Link>
         <Link to="/chat" style={navLinkStyle}>
           Чат
@@ -112,6 +118,7 @@ function App() {
         >
           <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/nearby" element={<NearbyShopsList />} />
             <Route path="/login" element={user ? <Navigate to="/chat" /> : <Login />} />
             <Route path="/register-user" element={<RegisterUser />} />
             <Route path="/register-seller" element={<RegisterSeller />} />

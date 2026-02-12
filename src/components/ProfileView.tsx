@@ -52,7 +52,6 @@ export default function ProfileView({ onBack }: ProfileViewProps) {
     try {
       const res = await api.post("/upload", formData);
       const newUrl = res.data.url;
-      console.log("Файл загружен, URL:", newUrl);
       await api.put("/auth/update-avatar", { avatar_url: newUrl });
       if (user) setUser({ ...user, avatar_url: newUrl });
       showAlert("Успех", "Ваш аватар успешно обновлен!");

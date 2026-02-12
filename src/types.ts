@@ -111,3 +111,30 @@ export interface IProduct {
   quantities: string;
   image_url?: string;
 }
+export interface Product {
+  id: number;
+  name: string;
+  description: string;
+  price: number;
+  quantities: number;
+  image_url: string;
+  is_active: boolean;
+}
+
+export interface Shop {
+  shop_id: number;
+  shop_owner_id: number;
+  shop_name: string;
+  phone: string;
+  opening_time: string;
+  closing_time: string;
+  payment_details: string;
+  products: Product[];
+}
+
+export interface ApiResponse {
+  status: "success" | "error";
+  count: number;
+  data: Shop[];
+  message?: string;
+}

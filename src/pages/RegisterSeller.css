@@ -417,9 +417,8 @@
   cursor: pointer;
 }
 .product-card-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr; /* Две равные колонки */
-  gap: 8px;
+  display: flex;
+  flex-direction: column;
   margin-top: 10px;
 }
 
