@@ -55,6 +55,7 @@ export type DecryptedMessage = {
   sender_surname: string;
   sender_avatar: string;
   user_id?: number;
+  reply_to_id?: number;
   parent_id: number;
   sender_public_key?: string;
   updated_at?: string;

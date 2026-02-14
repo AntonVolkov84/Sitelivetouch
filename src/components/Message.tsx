@@ -4,11 +4,13 @@ import "./Message.css";
 interface PropsMessage {
   message: DecryptedMessage;
   isMe: boolean;
+  allMessages: DecryptedMessage[];
   onPressProfile?: (id: number) => void;
   onContextMenu?: (e: React.MouseEvent, msg: DecryptedMessage) => void;
 }
 
-export default function Message({ message, isMe, onPressProfile, onContextMenu }: PropsMessage) {
+export default function Message({ message, isMe, onPressProfile, onContextMenu, allMessages }: PropsMessage) {
+  const repliedMsg = message.reply_to_id ? allMessages.find((m) => m.id === message.reply_to_id) : null;
   const renderContent = () => {
     const text = message.text;
 
@@ -36,6 +38,28 @@ export default function Message({ message, isMe, onPressProfile, onContextMenu }
   return (
     <div onContextMenu={(e) => onContextMenu?.(e, message)} className={`message-wrapper ${isMe ? "me" : "them"}`}>
       <div className="message-bubble">
+        {repliedMsg && (
+          <div
+            className="message-reply-quote"
+            onClick={() => {
+              document.getElementById(`msg-${repliedMsg.id}`)?.scrollIntoView({ behavior: "smooth" });
+            }}
+          >
+            <div className="reply-quote-content">
+              <span className="reply-quote-sender">Ответ:</span>
+              <span className="reply-quote-sender">
+                {repliedMsg.sender_surname} {repliedMsg.sender_name}
+              </span>
+              <span className="reply-quote-text">
+                {repliedMsg.text.startsWith("https://")
+                  ? "📎 Файл/Медиа"
+                  : repliedMsg.text.length > 50
+                    ? repliedMsg.text.substring(0, 50) + "..."
+                    : repliedMsg.text}
+              </span>
+            </div>
+          </div>
+        )}
         <div className="message-info" onClick={() => onPressProfile?.(message.sender_id)}>
           {!isMe && message.sender_avatar && <img src={message.sender_avatar} className="mini-avatar" alt="avatar" />}
           <span className="sender-name">{`${message.sender_surname} ${message.sender_name}`}</span>

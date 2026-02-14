@@ -27,13 +27,13 @@ export default function Chat() {
   const [inputText, setInputText] = useState("");
   const [selectedMessage, setSelectedMessage] = useState<DecryptedMessage | null>(null);
   const [editMode, setEditMode] = useState(false);
+  const [replyMessage, setReplyMessage] = useState<DecryptedMessage | null>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; msg: DecryptedMessage } | null>(null);
   const [, setViewedProfileId] = useState<number | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isParticipantsModalOpen, setIsParticipantsModalOpen] = useState(false);
   const [participants, setParticipants] = useState<any[]>([]);
   const [newUserEmail, setNewUserEmail] = useState("");
-  const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
 
   const navigate = useNavigate();
@@ -55,7 +55,6 @@ export default function Chat() {
       return;
     }
     try {
-      setIsUploading(true);
       setUploadProgress(1);
       await uploadFileWeb(file);
     } catch (err: any) {
@@ -63,7 +62,6 @@ export default function Chat() {
         logError(user.email, "Web Chat: markAsRead", err.response?.data || err.message);
       }
     } finally {
-      setIsUploading(false);
       setUploadProgress(0);
       event.target.value = "";
     }
@@ -131,6 +129,12 @@ export default function Chat() {
       console.error("Ошибка при записи файла в БД:", err.response?.data || err.message);
     }
   };
+  const cancelSpecialMode = () => {
+    setEditMode(false);
+    setReplyMessage(null);
+    setSelectedMessage(null);
+    setInputText("");
+  };
   const markAsRead = async () => {
     if (!selectedChat?.chat_id) return;
     removeUnread(selectedChat.chat_id);
@@ -160,7 +164,6 @@ export default function Chat() {
   }, []);
   const handleContextMenu = (e: React.MouseEvent, msg: DecryptedMessage) => {
     e.preventDefault();
-    if (Number(msg.sender_id) !== Number(user?.id)) return;
     const menuWidth = 150;
     const menuHeight = 100;
     let x = e.clientX;
@@ -359,7 +362,6 @@ export default function Chat() {
     setMessages([]);
     if (selectedChat) loadMessages();
   }, [selectedChat]);
-
   const handleSendWeb = async (msg?: string) => {
     try {
       const textToSend = msg ?? inputText;
@@ -371,9 +373,10 @@ export default function Chat() {
       if (editMode && selectedMessage) {
         if (Number(selectedMessage.sender_id) === Number(user?.id)) {
           await handleUpdateMessage();
+          cancelSpecialMode();
           return;
         } else {
-          setEditMode(false);
+          cancelSpecialMode();
           setSelectedMessage(null);
           return;
         }
@@ -403,9 +406,9 @@ export default function Chat() {
           chat_id,
           ciphertext,
           nonce,
+          reply_to_id: replyMessage?.id,
         });
-
-        setInputText("");
+        cancelSpecialMode();
         return;
       }
 
@@ -413,7 +416,6 @@ export default function Chat() {
       if (chat_type === "group") {
         const participantsRes = await api.get(`/chats/${chat_id}/participants`);
         const participants = participantsRes.data;
-        console.log("Participant", participants);
         const encryptedPerUser = participants.map((p: any) => {
           const publicKeyUint8 = decodeBase64(p.public_key);
           const { ciphertext, nonce } = encryptMessage(textToSend, publicKeyUint8, privateKey);
@@ -428,11 +430,13 @@ export default function Chat() {
           chat_id,
           messages: encryptedPerUser,
           chatName: selectedChat.name,
+          reply_to_id: replyMessage?.id,
         });
-
-        setInputText("");
+        cancelSpecialMode();
       }
     } catch (err: any) {
+      setEditMode(false);
+      setReplyMessage(null);
       console.error("Ошибка при отправке (handleSendWeb):", err.response?.data || err.message);
     }
   };
@@ -504,6 +508,7 @@ export default function Chat() {
               sender_avatar: data.sender_avatar,
               sender_name: data.sender_name,
               sender_surname: data.sender_surname,
+              reply_to_id: data.reply_to_id,
               created_at: data.created_at ?? new Date().toISOString(),
               parent_id: data.parent_id,
               text,
@@ -541,6 +546,7 @@ export default function Chat() {
               sender_avatar: data.sender_avatar,
               sender_name: data.sender_name,
               sender_surname: data.sender_surname,
+              reply_to_id: encryptedForMe.reply_to_id || data.reply_to_id,
               created_at: data.created_at ?? new Date().toISOString(),
               parent_id: encryptedForMe.parent_id || data.parent_id,
               text: decryptedText,
@@ -669,6 +675,14 @@ export default function Chat() {
     }
     return chat.name?.toLowerCase().includes(q);
   });
+
+  const handleReply = (msg: DecryptedMessage) => {
+    setEditMode(false);
+    setInputText("");
+    setReplyMessage(msg);
+    setContextMenu(null);
+    document.querySelector("input")?.focus();
+  };
 
   if (loading) return <h2 className="loader">Загрузка...</h2>;
 
@@ -842,6 +856,7 @@ export default function Chat() {
                     message={msg}
                     isMe={Number(msg.sender_id) === Number(user?.id)}
                     onPressProfile={(id) => setViewedProfileId(id)}
+                    allMessages={messages}
                   />
                 </div>
               ))}
@@ -853,14 +868,20 @@ export default function Chat() {
                     <span className="edit-label">Редактирование</span>
                     <span className="edit-text-preview">{selectedMessage?.text}</span>
                   </div>
-                  <button
-                    className="cancel-edit-btn"
-                    onClick={() => {
-                      setEditMode(false);
-                      setSelectedMessage(null);
-                      setInputText("");
-                    }}
-                  >
+                  <button className="cancel-edit-btn" onClick={cancelSpecialMode}>
+                    ✕
+                  </button>
+                </div>
+              )}
+              {replyMessage && (
+                <div className="reply-indicator-bar">
+                  <div className="reply-info">
+                    <span className="reply-label">Ответ пользователю {replyMessage.sender_name}</span>
+                    <span className="reply-text-preview">
+                      {replyMessage.text.length > 100 ? replyMessage.text.slice(0, 100) + "..." : replyMessage.text}
+                    </span>
+                  </div>
+                  <button className="cancel-reply-btn" onClick={cancelSpecialMode}>
                     ✕
                   </button>
                 </div>
@@ -970,23 +991,38 @@ export default function Chat() {
       </main>
       {contextMenu && (
         <div className="custom-context-menu" style={{ top: contextMenu.y, left: contextMenu.x }}>
+          {Number(contextMenu.msg.sender_id) === Number(user?.id) && (
+            <button
+              onClick={() => {
+                setSelectedMessage(contextMenu.msg);
+                setEditMode(true);
+                setReplyMessage(null);
+                setInputText(contextMenu.msg.text || "");
+                setContextMenu(null);
+              }}
+            >
+              Изменить
+            </button>
+          )}
           <button
             onClick={() => {
-              setSelectedMessage(contextMenu.msg);
-              setEditMode(true);
-              setInputText(contextMenu.msg.text || ""); // Предзаполняем инпут текстом сообщения
+              handleReply(contextMenu.msg);
+              setContextMenu(null);
             }}
           >
-            Изменить
+            Ответить
           </button>
-          <button
-            className="delete-btn"
-            onClick={() => {
-              handleDelete(contextMenu.msg.id);
-            }}
-          >
-            Удалить
-          </button>
+          {Number(contextMenu.msg.sender_id) === Number(user?.id) && (
+            <button
+              className="delete-btn"
+              onClick={() => {
+                handleDelete(contextMenu.msg.id);
+                setContextMenu(null);
+              }}
+            >
+              Удалить
+            </button>
+          )}
         </div>
       )}
       {/* Модалка добавления */}

@@ -351,7 +351,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.1s, opacity 0.2s;
+  transition:
+    transform 0.1s,
+    opacity 0.2s;
 }
 
 .send-button:hover {
@@ -655,8 +657,50 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.reply-indicator-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f0f4f9;
+  padding: 8px 15px;
+  border-left: 3px solid #4a8cff;
+  border-top: 1px solid #ddd;
+  overflow: hidden;
+}
+
+.reply-info {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.reply-label {
+  font-size: 12px;
+  color: #4a8cff;
+  font-weight: bold;
+}
+
+.reply-text-preview {
+  font-size: 13px;
+  color: #666;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 .cancel-edit-btn {
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: #999;
+  cursor: pointer;
+  padding: 5px;
+}
+
+.cancel-reply-btn:hover {
+  color: #ff4a4a;
+}
+.cancel-reply-btn {
   background: none;
   border: none;
   font-size: 18px;
