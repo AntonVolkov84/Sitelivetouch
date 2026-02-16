@@ -35,6 +35,8 @@ export default function Chat() {
   const [participants, setParticipants] = useState<any[]>([]);
   const [newUserEmail, setNewUserEmail] = useState("");
   const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [selectedUserProfile, setSelectedUserProfile] = useState<any>(null);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   const navigate = useNavigate();
   const { ws } = useWS() || {};
@@ -683,6 +685,15 @@ export default function Chat() {
     setContextMenu(null);
     document.querySelector("input")?.focus();
   };
+  const handleOpenProfile = async (userId: number) => {
+    try {
+      const res = await api.get(`/auth/${userId}/profile`);
+      setSelectedUserProfile(res.data);
+      setIsProfileOpen(true);
+    } catch (err) {
+      console.error("Ошибка загрузки профиля", err);
+    }
+  };
 
   if (loading) return <h2 className="loader">Загрузка...</h2>;
 
@@ -855,7 +866,7 @@ export default function Chat() {
                   <Message
                     message={msg}
                     isMe={Number(msg.sender_id) === Number(user?.id)}
-                    onPressProfile={(id) => setViewedProfileId(id)}
+                    onPressProfile={handleOpenProfile}
                     allMessages={messages}
                   />
                 </div>
@@ -1074,6 +1085,22 @@ export default function Chat() {
             <button className="participant-item-btn" onClick={() => setIsParticipantsModalOpen(false)}>
               Закрыть
             </button>
+          </div>
+        </div>
+      )}
+      {isProfileOpen && selectedUserProfile && (
+        <div className="web-modal-overlay" onClick={() => setIsProfileOpen(false)}>
+          <div className="web-modal-content" onClick={(e) => e.stopPropagation()}>
+            <button className="close-btn" onClick={() => setIsProfileOpen(false)}>
+              ×
+            </button>
+            <img src={selectedUserProfile.avatar_url || "default-avatar.png"} alt="Avatar" />
+            <h2>
+              {selectedUserProfile.username} {selectedUserProfile.usersurname}
+            </h2>
+            <p>{selectedUserProfile.email}</p>
+            <p>{selectedUserProfile.phone || "Телефон не указан"}</p>
+            <div className="bio">{selectedUserProfile.bio}</div>
           </div>
         </div>
       )}

@@ -60,7 +60,7 @@ export default function Message({ message, isMe, onPressProfile, onContextMenu, 
             </div>
           </div>
         )}
-        <div className="message-info" onClick={() => onPressProfile?.(message.sender_id)}>
+        <div className="message-info" onClick={() => onPressProfile?.(message.sender_id)} style={{ cursor: "pointer" }}>
           {!isMe && message.sender_avatar && <img src={message.sender_avatar} className="mini-avatar" alt="avatar" />}
           <span className="sender-name">{`${message.sender_surname} ${message.sender_name}`}</span>
           {isMe && message.sender_avatar && <img src={message.sender_avatar} className="mini-avatar" alt="avatar" />}

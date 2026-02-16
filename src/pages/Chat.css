@@ -712,3 +712,101 @@
 .cancel-edit-btn:hover {
   color: #ff4a4a;
 }
+/* Затемнение фона */
+.web-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5); /* Полупрозрачный черный */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000; /* Чтобы было поверх всех элементов чата */
+  backdrop-filter: blur(2px); /* Легкое размытие фона (опционально) */
+}
+
+/* Контент модального окна */
+.web-modal-content {
+  background-color: white;
+  width: 90%;
+  max-width: 400px;
+  border-radius: 20px;
+  padding: 25px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+
+  /* Анимация появления */
+  animation: modalAppear 0.3s ease-out;
+}
+
+/* Кнопка закрытия */
+.close-btn {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 28px;
+  cursor: pointer;
+  color: #999;
+  line-height: 1;
+  padding: 0;
+}
+
+.close-btn:hover {
+  color: #333;
+}
+
+/* Аватар в модалке */
+.web-modal-content img {
+  width: 120px;
+  height: 120px;
+  border-radius: 60px;
+  object-fit: cover;
+  margin-bottom: 15px;
+  border: 3px solid #f0f0f0;
+}
+
+/* Имя пользователя */
+.web-modal-content h2 {
+  margin: 0 0 5px 0;
+  font-size: 22px;
+  color: #333;
+}
+
+/* Email и телефон */
+.web-modal-content p {
+  margin: 2px 0;
+  color: #666;
+  font-size: 15px;
+}
+
+/* Блок "О себе" */
+.web-modal-content .bio {
+  margin-top: 15px;
+  padding: 10px;
+  background-color: #f9f9f9;
+  border-radius: 10px;
+  width: 100%;
+  text-align: center;
+  color: #444;
+  font-style: italic;
+  font-size: 14px;
+}
+
+/* Анимация появления */
+@keyframes modalAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
