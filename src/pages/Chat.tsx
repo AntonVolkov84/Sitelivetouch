@@ -29,7 +29,6 @@ export default function Chat() {
   const [editMode, setEditMode] = useState(false);
   const [replyMessage, setReplyMessage] = useState<DecryptedMessage | null>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; msg: DecryptedMessage } | null>(null);
-  const [, setViewedProfileId] = useState<number | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isParticipantsModalOpen, setIsParticipantsModalOpen] = useState(false);
   const [participants, setParticipants] = useState<any[]>([]);

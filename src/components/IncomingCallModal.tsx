@@ -1,9 +1,11 @@
 import { useNavigate } from "react-router-dom";
 import { useWS } from "../context/WsContext";
 import "./IncomingCallModal.css";
+import { useUser } from "../context/UserContext";
 
 export default function IncomingCallModal() {
-  const { signals, consumeSignal, stopRingtone, setIsInCall } = useWS();
+  const { ws, signals, consumeSignal, stopRingtone, setIsInCall } = useWS();
+  const { user } = useUser();
   const navigate = useNavigate();
   const incomingOffer = signals.find((s) => s.type === "offer");
   if (!incomingOffer) return null;
@@ -18,6 +20,17 @@ export default function IncomingCallModal() {
 
   const handleDecline = () => {
     stopRingtone();
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(
+        JSON.stringify({
+          type: "call-ended",
+          chatId: incomingOffer.chatId,
+          sender: user?.id,
+          target: incomingOffer.sender,
+        }),
+      );
+    }
+
     consumeSignal((s) => s.type === "offer");
   };
 
