@@ -311,6 +311,7 @@
 
 .message-input.multiline {
   flex: 1;
+  max-width: 800px;
   border: 1px solid #ddd;
   border-radius: 20px;
   padding: 10px 15px;

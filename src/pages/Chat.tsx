@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { type Chat, type DecryptedMessage } from "../types";
 import { api } from "../../axiosinstance";
@@ -36,6 +36,12 @@ export default function Chat() {
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [selectedUserProfile, setSelectedUserProfile] = useState<any>(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isFetchingHistory, setIsFetchingHistory] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [shouldScrollToBottom, setShouldScrollToBottom] = useState(true);
+  const [offset, setOffset] = useState(0);
+  const LIMIT = 30;
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const navigate = useNavigate();
   const { ws } = useWS() || {};
@@ -44,7 +50,12 @@ export default function Chat() {
     if (!selectedChat || !selectedChat.otherUser) return;
     navigate(`/call/${selectedChat.chat_id}?callerId=${selectedChat.otherUser.id}&isIncoming=false`);
   };
-
+  useEffect(() => {
+    setHasMore(true);
+    setShouldScrollToBottom(true);
+    setMessages([]);
+    if (selectedChat) loadMessages(1);
+  }, [selectedChat]);
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!event.target.files) return;
     const file = event.target.files[0];
@@ -283,23 +294,26 @@ export default function Chat() {
   };
   useEffect(() => {
     const container = document.querySelector(".messages-container");
-    if (container) {
+    if (container && shouldScrollToBottom) {
       container.scrollTop = container.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, shouldScrollToBottom]);
 
-  const loadMessages = async () => {
+  const loadMessages = async (currentOffset: number = 0) => {
     if (!selectedChat || !user) return;
-
+    if (currentOffset > 0 && (!hasMore || isFetchingHistory)) return;
     try {
+      setIsFetchingHistory(true);
+      const container = document.querySelector(".messages-container");
+      const scrollPos = container ? container.scrollHeight - container.scrollTop : 0;
       const keyPair = getStoredKeyPair();
       if (!keyPair) {
         console.error("Ключи не найдены");
         return;
       }
-      const { data } = await api.get(`/chats/${selectedChat.chat_id}`);
-
+      const { data } = await api.get(`/chats/${selectedChat.chat_id}?limit=${LIMIT}&offset=${currentOffset}`);
       const rawMessages = data as any[];
+      if (rawMessages.length < 30) setHasMore(false);
       let decrypted: any[] = [];
       // ==== ПРИВАТНЫЙ ЧАТ ====
       if (selectedChat.type === "private" && selectedChat.otherUser) {
@@ -353,9 +367,24 @@ export default function Chat() {
           }
         });
       }
-      setMessages(decrypted.filter((m) => m !== null).reverse());
+      const newDecrypted = decrypted.filter((m) => m !== null).reverse();
+      if (currentOffset === 0) {
+        setMessages(newDecrypted);
+        setOffset(LIMIT);
+        setShouldScrollToBottom(true);
+      } else {
+        setShouldScrollToBottom(false);
+        setMessages((prev) => [...newDecrypted, ...prev]);
+        setOffset(currentOffset + LIMIT);
+
+        requestAnimationFrame(() => {
+          if (container) container.scrollTop = container.scrollHeight - scrollPos;
+        });
+      }
     } catch (err) {
       console.error("Load messages error:", err);
+    } finally {
+      setIsFetchingHistory(false);
     }
   };
 
@@ -682,7 +711,7 @@ export default function Chat() {
     setInputText("");
     setReplyMessage(msg);
     setContextMenu(null);
-    document.querySelector("input")?.focus();
+    inputRef.current?.focus();
   };
   const handleOpenProfile = async (userId: number) => {
     try {
@@ -693,6 +722,28 @@ export default function Chat() {
       console.error("Ошибка загрузки профиля", err);
     }
   };
+  useEffect(() => {
+    const container = document.querySelector(".messages-container");
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !isFetchingHistory) {
+          console.log("Triggering loadMessages with offset:", offset);
+          loadMessages(offset);
+        }
+      },
+      {
+        threshold: 0.1,
+        root: container,
+      },
+    );
+
+    const target = document.querySelector("#scroll-sentinel");
+    if (target) observer.observe(target);
+
+    return () => observer.disconnect();
+    // messages.length нужен здесь, чтобы после каждой подгрузки
+    // обсервер "перепривязывался" к сентинелу, который сместился
+  }, [offset, hasMore, isFetchingHistory, selectedChat, messages.length]);
 
   if (loading) return <h2 className="loader">Загрузка...</h2>;
 
@@ -746,7 +797,7 @@ export default function Chat() {
                     <div className="chat-info">
                       <div className="chat-name-row">
                         <span className="chat-name">
-                          {userInfo ? `${userInfo.username} ${userInfo.usersurname}` : `Group: ${item.name}`}
+                          {userInfo ? `${userInfo.username} ${userInfo.usersurname}` : `Группа: ${item.name}`}
                         </span>
                         {unreadChats.has(item.chat_id) && <span className="unread-badge">🔥</span>}
                       </div>
@@ -860,6 +911,9 @@ export default function Chat() {
               </div>
             </header>
             <div className="messages-container">
+              <div id="scroll-sentinel" style={{ height: "10px" }}>
+                {isFetchingHistory && <div className="loader-mini">Загрузка истории...</div>}
+              </div>
               {messages.map((msg, index) => (
                 <div key={msg.id || index} onContextMenu={(e) => handleContextMenu(e, msg)}>
                   <Message
@@ -872,11 +926,15 @@ export default function Chat() {
               ))}
             </div>
             <footer className="input-area">
-              {editMode && (
+              {editMode && selectedMessage && (
                 <div className="edit-indicator-bar">
                   <div className="edit-info">
                     <span className="edit-label">Редактирование</span>
-                    <span className="edit-text-preview">{selectedMessage?.text}</span>
+                    <span className="edit-text-preview">
+                      {selectedMessage.text.length > 100
+                        ? selectedMessage.text.slice(0, 100) + "..."
+                        : selectedMessage.text}
+                    </span>
                   </div>
                   <button className="cancel-edit-btn" onClick={cancelSpecialMode}>
                     ✕
@@ -933,6 +991,7 @@ export default function Chat() {
                 )}
                 {uploadProgress > 0 ? null : (
                   <textarea
+                    ref={inputRef}
                     className="message-input multiline"
                     placeholder="Введите сообщение..."
                     rows={1}
@@ -1009,6 +1068,7 @@ export default function Chat() {
                 setReplyMessage(null);
                 setInputText(contextMenu.msg.text || "");
                 setContextMenu(null);
+                inputRef.current?.focus();
               }}
             >
               Изменить
