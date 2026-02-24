@@ -61,7 +61,8 @@ export default function Chat() {
     const file = event.target.files[0];
     if (!file) return;
     const MAX_SIZE = 20 * 1024 * 1024;
-    const isProgrammer = user?.email === "antvolkov84@gmail.com";
+    const admins = ["antvolkov84@gmail.com", "aleks_e@inbox.ru"];
+    const isProgrammer = user?.email && admins.includes(user.email);
     if (file.size > MAX_SIZE && !isProgrammer) {
       alert("Файл слишком большой. Максимальный размер — 20 МБ.");
       return;
@@ -177,7 +178,7 @@ export default function Chat() {
   const handleContextMenu = (e: React.MouseEvent, msg: DecryptedMessage) => {
     e.preventDefault();
     const menuWidth = 150;
-    const menuHeight = 100;
+    const menuHeight = 150;
     let x = e.clientX;
     let y = e.clientY;
     if (x + menuWidth > window.innerWidth) {
@@ -279,17 +280,35 @@ export default function Chat() {
   const handleDelete = async (id: number | string) => {
     showConfirm(
       "Удаление",
-      "Удалить сообщение?",
+      "Удалить сообщение у себя?",
       async () => {
         try {
           await api.delete(`/chats/message/${id}`);
+          setMessages((prev) => prev.filter((m) => m.id !== id));
           setSelectedMessage(null);
         } catch (err: any) {
           console.error("Delete error:", err);
           alert("Не удалось удалить сообщение.");
         }
       },
-      "Продолжить",
+      "Удалить",
+    );
+  };
+  const handleDeleteAllParticipants = async (id: number | string) => {
+    showConfirm(
+      "Удаление у всех",
+      "Вы уверены, что хотите удалить это сообщение для всех участников?",
+      async () => {
+        try {
+          await api.delete(`/chats/messageall/${id}`);
+          setMessages((prev) => prev.filter((m) => m.id !== id));
+          setSelectedMessage(null);
+        } catch (err: any) {
+          console.error("Delete All error:", err);
+          alert("Не удалось удалить сообщение у всех участников.");
+        }
+      },
+      "Удалить у всех",
     );
   };
   useEffect(() => {
@@ -1082,15 +1101,24 @@ export default function Chat() {
           >
             Ответить
           </button>
+          <button
+            className="delete-btn"
+            onClick={() => {
+              handleDelete(contextMenu.msg.id);
+              setContextMenu(null);
+            }}
+          >
+            Удалить
+          </button>
           {Number(contextMenu.msg.sender_id) === Number(user?.id) && (
             <button
               className="delete-btn"
               onClick={() => {
-                handleDelete(contextMenu.msg.id);
+                handleDeleteAllParticipants(contextMenu.msg.id);
                 setContextMenu(null);
               }}
             >
-              Удалить
+              Удалить у всех
             </button>
           )}
         </div>
