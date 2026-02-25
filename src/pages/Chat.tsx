@@ -1,6 +1,12 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { type Chat, type DecryptedMessage } from "../types";
+import {
+  type Chat,
+  type DecryptedMessage,
+  type UserChat,
+  type SocketMessageNewPayload,
+  type EncryptedMessageFromServer,
+} from "../types";
 import { api } from "../../axiosinstance";
 import { useWS } from "../context/WsContext";
 import { useModal } from "../context/ModalContext";
@@ -138,6 +144,9 @@ export default function Chat() {
         file_name: fileName,
       });
     } catch (err: any) {
+      if (user) {
+        logError(user.email, "Web Chat: addFileRecord", err.response?.data || err.message);
+      }
       console.error("Ошибка при записи файла в БД:", err.response?.data || err.message);
     }
   };
@@ -194,7 +203,10 @@ export default function Chat() {
       const res = await api.get(`/chats/${selectedChat.chat_id}/participants`);
       setParticipants(res.data);
       setIsParticipantsModalOpen(true);
-    } catch (err) {
+    } catch (err: any) {
+      if (user) {
+        logError(user.email, "Web Chat: fetchParticipants", err.response?.data || err.message);
+      }
       console.error("Ошибка загрузки участников:", err);
     }
   };
@@ -213,21 +225,10 @@ export default function Chat() {
       });
       showAlert("Успех", `Пользователь ${cleanEmail} добавлен`);
     } catch (err: any) {
+      if (user) {
+        logError(user.email, "Web Chat: addParticipant", err.response?.data || err.message);
+      }
       alert("Не удалось добавить пользователя");
-    }
-  };
-  const getParticipantPublicKey = async (
-    chat_id: number,
-    participant_id: number | undefined,
-  ): Promise<string | null> => {
-    if (!participant_id) return null;
-    try {
-      const res = await api.get(`/chats/${chat_id}/participants`);
-      const participant = res.data.find((p: any) => Number(p.id) === Number(participant_id));
-      return participant?.public_key || null;
-    } catch (err) {
-      console.error("getParticipantPublicKey error:", err);
-      return null;
     }
   };
   const handleUpdateMessage = async () => {
@@ -241,7 +242,7 @@ export default function Chat() {
       const { privateKey } = keyPair;
       const { chat_id } = selectedChat;
       const { data: participants } = await api.get(`/chats/${chat_id}/participants`);
-      const encryptedPerUser = participants.map((u: any) => {
+      const encryptedPerUser = participants.map((u: UserChat) => {
         const userPub = decodeBase64(u.public_key);
         const { ciphertext, nonce } = encryptMessage(inputText, userPub, privateKey);
         return { recipient_id: u.id, ciphertext, nonce };
@@ -254,6 +255,9 @@ export default function Chat() {
       setEditMode(false);
       setSelectedMessage(null);
     } catch (err: any) {
+      if (user) {
+        logError(user.email, "Web Chat: handleUpdateMessage", err.response?.data || err.message);
+      }
       console.error("handleUpdateMessage error:", err);
     }
   };
@@ -267,6 +271,9 @@ export default function Chat() {
           setMessages((prev) => prev.filter((m) => m.id !== id));
           setSelectedMessage(null);
         } catch (err: any) {
+          if (user) {
+            logError(user.email, "Web Chat: handleDelete", err.response?.data || err.message);
+          }
           console.error("Delete error:", err);
           alert("Не удалось удалить сообщение.");
         }
@@ -284,6 +291,9 @@ export default function Chat() {
           setMessages((prev) => prev.filter((m) => m.id !== id));
           setSelectedMessage(null);
         } catch (err: any) {
+          if (user) {
+            logError(user.email, "Web Chat: handleDeleteAllParticipants", err.response?.data || err.message);
+          }
           console.error("Delete All error:", err);
           alert("Не удалось удалить сообщение у всех участников.");
         }
@@ -311,7 +321,7 @@ export default function Chat() {
         return;
       }
       const { data } = await api.get(`/chats/${selectedChat.chat_id}?limit=${LIMIT}&offset=${currentOffset}`);
-      const rawMessages = data as any[];
+      const rawMessages = data as DecryptedMessage[];
       if (rawMessages.length < 30) setHasMore(false);
       const decrypted = rawMessages.map((msg) => {
         if (!msg.ciphertext || !msg.nonce) return msg;
@@ -322,7 +332,10 @@ export default function Chat() {
           }
           const text = decryptMessage(msg.ciphertext, msg.nonce, keyPair.privateKey, decodeBase64(pubKeyString));
           return { ...msg, text };
-        } catch (err) {
+        } catch (err: any) {
+          if (user) {
+            logError(user.email, "Web Chat: loadMessages", err.response?.data || err.message);
+          }
           console.error(`Ошибка расшифровки сообщения ${msg.id}:`, err);
           return { ...msg, text: "[Ошибка расшифровки]" };
         }
@@ -377,7 +390,7 @@ export default function Chat() {
       const { privateKey } = keyPair;
       const participantsRes = await api.get(`/chats/${chat_id}/participants`);
       const participants = participantsRes.data;
-      const encryptedPerUser = participants.map((p: any) => {
+      const encryptedPerUser = participants.map((p: UserChat) => {
         const publicKeyUint8 = decodeBase64(p.public_key);
         const { ciphertext, nonce } = encryptMessage(textToSend, publicKeyUint8, privateKey);
         return {
@@ -395,6 +408,9 @@ export default function Chat() {
       });
       cancelSpecialMode();
     } catch (err: any) {
+      if (user) {
+        logError(user.email, "Web Chat: handleSendWeb", err.response?.data || err.message);
+      }
       setEditMode(false);
       setReplyMessage(null);
       console.error("Ошибка при отправке (handleSendWeb):", err.response?.data || err.message);
@@ -405,9 +421,11 @@ export default function Chat() {
     try {
       const chatsRes = await api.get("/chats/getchats");
       setChats(chatsRes.data);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Data fetch error:", err);
-      await logError("Ошибка при попытке входа", "WEB Chat: fetchData", err);
+      if (user) {
+        logError(user.email, "Web Chat: fetchData", err.response?.data || err.message);
+      }
       navigate("/login");
     } finally {
       setLoading(false);
@@ -436,26 +454,48 @@ export default function Chat() {
           if (selectedChat?.chat_id === data.chat_id) setSelectedChat(null);
         }
         if (data.type === "message_new" && Number(data.chat_id) === Number(selectedChat?.chat_id)) {
-          const myCopy = data.messages?.find((m: any) => Number(m.user_id || m.recipient_id) === Number(user?.id));
+          const payload = data as SocketMessageNewPayload;
+          const myCopy = payload.messages?.find(
+            (m: EncryptedMessageFromServer) => Number(m.user_id || m.recipient_id) === Number(user?.id),
+          );
           if (myCopy) {
             try {
-              const pubKey = myCopy.sender_public_key || data.sender_public_key;
+              const pubKey = data.sender_public_key;
+              if (!pubKey) throw new Error("No sender public key in socket data");
               const text = decryptMessage(myCopy.ciphertext, myCopy.nonce, keyPair.privateKey, decodeBase64(pubKey));
               const newMsg = {
                 ...myCopy,
+                reply_to_id: data.reply_to_id ? Number(data.reply_to_id) : null,
+                sender_id: data.sender_id,
                 sender_name: data.sender_name,
                 sender_surname: data.sender_surname,
                 sender_avatar: data.sender_avatar,
                 text,
               };
               setMessages((prev) => [...prev, newMsg]);
-            } catch (e) {
-              console.error("Decryption error", e);
+            } catch (err: any) {
+              if (user) {
+                logError(user.email, "Web Chat: handleMessage - new_message", err.response?.data || err.message);
+              }
+              console.error("Decryption error", err);
             }
           }
         }
+        if (data.type === "message_deleted") {
+          setMessages((prev) =>
+            prev.filter((msg) => {
+              const mId = Number(msg.id);
+              const mParentId = msg.parent_id ? Number(msg.parent_id) : null;
+              const targetId = Number(data.message_id);
+              return mId !== targetId && mParentId !== targetId;
+            }),
+          );
+          return;
+        }
         if (data.type === "message_updated" && Number(data.chat_id) === Number(selectedChat?.chat_id)) {
-          const myCopy = data.messages?.find((m: any) => Number(m.user_id || m.recipient_id) === Number(user?.id));
+          const myCopy = data.messages?.find(
+            (m: EncryptedMessageFromServer) => Number(m.user_id || m.recipient_id) === Number(user?.id),
+          );
           if (myCopy) {
             try {
               const pubKey = myCopy.sender_public_key;
@@ -471,15 +511,20 @@ export default function Chat() {
                   return msg;
                 }),
               );
-            } catch (e) {
-              console.error("Update decryption error", e);
+            } catch (err: any) {
+              if (user) {
+                logError(user.email, "Web Chat: handleMessage - message_updated", err.response?.data || err.message);
+              }
+              console.error("Update decryption error", err);
             }
           }
         }
       } catch (err: any) {
         console.error("WS error:", err);
         if (user) {
-          await logError(user.email, "WEB Chat: handleMessage", err);
+          if (user) {
+            logError(user.email, "Web Chat: handleMessage", err.response?.data || err.message);
+          }
         }
       }
     };
@@ -533,7 +578,10 @@ export default function Chat() {
       const res = await api.get(`/auth/${userId}/profile`);
       setSelectedUserProfile(res.data);
       setIsProfileOpen(true);
-    } catch (err) {
+    } catch (err: any) {
+      if (user) {
+        logError(user.email, "Web Chat: handleOpenProfile", err.response?.data || err.message);
+      }
       console.error("Ошибка загрузки профиля", err);
     }
   };

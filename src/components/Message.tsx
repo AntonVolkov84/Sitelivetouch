@@ -10,7 +10,14 @@ interface PropsMessage {
 }
 
 export default function Message({ message, isMe, onPressProfile, onContextMenu, allMessages }: PropsMessage) {
-  const repliedMsg = message.reply_to_id ? allMessages.find((m) => m.id === message.reply_to_id) : null;
+  const repliedMsg = message.reply_to_id
+    ? allMessages.find(
+        (m) =>
+          Number(m.id) === Number(message.reply_to_id) ||
+          (m.parent_id && Number(m.parent_id) === Number(message.reply_to_id)),
+      )
+    : null;
+  console.log("repliedMsg", repliedMsg, message.reply_to_id);
   const renderContent = () => {
     const text = message.text;
 

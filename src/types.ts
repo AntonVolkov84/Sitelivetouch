@@ -43,6 +43,28 @@ export type KeyPair = {
   publicKey: string;
   privateKey: string;
 };
+export interface EncryptedMessageFromServer {
+  id: number;
+  parent_id: number;
+  user_id: number;
+  ciphertext: string;
+  nonce: string;
+  reply_to_id: number | null;
+  created_at: string;
+  recipient_id?: number;
+}
+export interface SocketMessageNewPayload {
+  type: "message_new";
+  chat_id: number;
+  sender_id: number;
+  sender_name: string;
+  sender_surname: string;
+  sender_avatar: string;
+  sender_public_key: string;
+  reply_to_id: number | null;
+  created_at: string;
+  messages: EncryptedMessageFromServer[];
+}
 export type DecryptedMessage = {
   chat_id: number;
   ciphertext: string;
