@@ -1,6 +1,5 @@
 # React + TypeScript + Vite
 
-TODO: Прокрутка чатов. В закладке маяк сообщений. Подъем соощений по дате общения. Типы на странице Chat/ Error log
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:

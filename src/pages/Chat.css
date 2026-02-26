@@ -1,6 +1,6 @@
 .chat-layout {
   display: grid;
-  grid-template-columns: 350px 1fr; /* Фиксированная левая панель, остальное - чат */
+  grid-template-columns: 350px 1fr;
   height: 100vh;
   width: 100vw;
   overflow: hidden;
@@ -13,7 +13,8 @@
   flex-direction: column;
   border-right: 1px solid #e0e0e0;
   background-color: #fff;
-  height: 100%;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .sidebar-header {
@@ -63,10 +64,18 @@
   pointer-events: none;
 }
 
-/* Список чатов */
 .chat-list {
   flex: 1;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.chat-list::-webkit-scrollbar {
+  width: 6px;
+}
+.chat-list::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
 }
 
 .chat-item {
@@ -798,6 +807,59 @@
   color: #444;
   font-style: italic;
   font-size: 14px;
+}
+/* Контекстное меню */
+.custom-context-menu {
+  position: fixed; /* Используем fixed, чтобы координаты x/y из JS работали точно */
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  padding: 5px;
+  z-index: 2000;
+  min-width: 160px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #eee;
+  animation: contextAppear 0.1s ease-out;
+}
+
+/* Кнопки в меню */
+.custom-context-menu button {
+  background: none;
+  border: none;
+  padding: 10px 15px;
+  text-align: left;
+  font-size: 14px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.2s;
+  color: #333;
+}
+
+/* ТО САМОЕ ЗАТЕМНЕНИЕ при наведении */
+.custom-context-menu button:hover {
+  background-color: #f0f2f5; /* Легкое притемнение */
+}
+
+/* Опасные кнопки (Удалить) */
+.custom-context-menu button.delete-btn {
+  color: #ff4a4a;
+}
+
+.custom-context-menu button.delete-btn:hover {
+  background-color: #fff0f0; /* Розоватое притемнение для удаления */
+}
+
+/* Анимация появления для плавности */
+@keyframes contextAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 /* Анимация появления */

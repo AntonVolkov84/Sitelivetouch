@@ -17,6 +17,16 @@ export const UnreadProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [unreadChats, setUnreadChats] = useState<Set<number>>(new Set());
   const { user } = useUser();
 
+  useEffect(() => {
+    const unreadCount = unreadChats.size;
+    const baseTitle = "ЛайвТач";
+    if (unreadCount > 0) {
+      document.title = `(${unreadCount}) ${baseTitle}`;
+    } else {
+      document.title = baseTitle;
+    }
+  }, [unreadChats]);
+
   const loadUnread = useCallback(async () => {
     try {
       const res = await api.get("/chats/unread");

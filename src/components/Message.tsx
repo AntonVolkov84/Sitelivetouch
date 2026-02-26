@@ -17,7 +17,7 @@ export default function Message({ message, isMe, onPressProfile, onContextMenu, 
           (m.parent_id && Number(m.parent_id) === Number(message.reply_to_id)),
       )
     : null;
-  console.log("repliedMsg", repliedMsg, message.reply_to_id);
+
   const renderContent = () => {
     const text = message.text;
 

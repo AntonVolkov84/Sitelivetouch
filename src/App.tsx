@@ -1,4 +1,4 @@
-import { Routes, Route, Link, useNavigate, useLocation, Navigate } from "react-router-dom";
+import { Routes, Route, NavLink, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { useUser } from "./context/UserContext";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
@@ -15,7 +15,14 @@ function App() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, setUser, loading } = useUser();
-
+  const getNavLinkStyle = ({ isActive }: { isActive: boolean }) => ({
+    ...navLinkStyle,
+    color: isActive ? "#b71c1c" : "#555",
+    backgroundColor: isActive ? "rgba(183, 28, 28, 0.08)" : "transparent",
+    padding: "6px 12px",
+    borderRadius: "8px",
+    transition: "all 0.2s ease",
+  });
   const isFullWidthPage =
     location.pathname === "/chat" ||
     location.pathname === "/nearby" ||
@@ -42,7 +49,7 @@ function App() {
       >
         <img
           src={Logo}
-          alt="LiveTouch Logo"
+          alt="ЛайвТач логотип"
           style={{
             height: "32px",
             width: "auto",
@@ -57,7 +64,7 @@ function App() {
             color: "#333",
           }}
         >
-          LiveTouch<span style={{ color: "#ff4d4d" }}>.chat</span>
+          ЛайвТач<span style={{ color: "#ff4d4d" }}>.чат</span>
         </span>
       </div>
       <nav
@@ -71,19 +78,19 @@ function App() {
           backgroundColor: "white",
         }}
       >
-        <Link to="/nearby" style={{ ...navLinkStyle, color: "#ff4d4d" }}>
+        <NavLink to="/nearby" style={getNavLinkStyle}>
           📍 Рядом
-        </Link>
-        <Link to="/" style={navLinkStyle}>
+        </NavLink>
+        <NavLink to="/" style={getNavLinkStyle}>
           Домашняя
-        </Link>
-        <Link to="/chat" style={navLinkStyle}>
+        </NavLink>
+        <NavLink to="/chat" style={getNavLinkStyle}>
           Чат
-        </Link>
+        </NavLink>
         {user && (
-          <Link to="/register-seller" style={navLinkStyle}>
+          <NavLink to="/register-seller" style={getNavLinkStyle}>
             Продавцам
-          </Link>
+          </NavLink>
         )}
 
         <div style={{ display: "flex", alignItems: "center" }}>
@@ -92,9 +99,9 @@ function App() {
               Выйти ({user.username})
             </button>
           ) : (
-            <Link to="/login" style={navLinkStyle}>
+            <NavLink to="/login" style={getNavLinkStyle}>
               Войти
-            </Link>
+            </NavLink>
           )}
         </div>
       </nav>
@@ -144,7 +151,6 @@ const navLinkStyle = {
 
 const logoutButtonStyle = {
   ...navLinkStyle,
-  color: "#ff4d4d",
   border: "none",
   background: "none",
   cursor: "pointer",

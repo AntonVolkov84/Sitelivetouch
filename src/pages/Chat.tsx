@@ -44,7 +44,6 @@ export default function Chat() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isFetchingHistory, setIsFetchingHistory] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const [shouldScrollToBottom, setShouldScrollToBottom] = useState(true);
   const [offset, setOffset] = useState(0);
   const LIMIT = 30;
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -57,7 +56,6 @@ export default function Chat() {
   };
   useEffect(() => {
     setHasMore(true);
-    setShouldScrollToBottom(true);
     setMessages([]);
     if (selectedChat) loadMessages(1);
   }, [selectedChat]);
@@ -301,12 +299,20 @@ export default function Chat() {
       "Удалить у всех",
     );
   };
+  // useEffect(() => {
+  //   const container = document.querySelector(".messages-container");
+  //   if (container && shouldScrollToBottom) {
+  //     container.scrollTop = container.scrollHeight;
+  //   }
+  // }, [messages, shouldScrollToBottom]);
   useEffect(() => {
     const container = document.querySelector(".messages-container");
-    if (container && shouldScrollToBottom) {
+    if (!container) return;
+    const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 150;
+    if (isAtBottom) {
       container.scrollTop = container.scrollHeight;
     }
-  }, [messages, shouldScrollToBottom]);
+  }, [messages]);
 
   const loadMessages = async (currentOffset: number = 0) => {
     if (!selectedChat || !user) return;
@@ -314,7 +320,8 @@ export default function Chat() {
     try {
       setIsFetchingHistory(true);
       const container = document.querySelector(".messages-container");
-      const scrollPos = container ? container.scrollHeight - container.scrollTop : 0;
+      const previousHeight = container ? container.scrollHeight : 0;
+      const previousScrollTop = container ? container.scrollTop : 0;
       const keyPair = getStoredKeyPair();
       if (!keyPair) {
         console.error("Ключи не найдены");
@@ -344,13 +351,17 @@ export default function Chat() {
       if (currentOffset === 0) {
         setMessages(newDecrypted);
         setOffset(LIMIT);
-        setShouldScrollToBottom(true);
+        setTimeout(() => {
+          if (container) container.scrollTop = container.scrollHeight;
+        }, 0);
       } else {
-        setShouldScrollToBottom(false);
         setMessages((prev) => [...newDecrypted, ...prev]);
         setOffset(currentOffset + LIMIT);
         requestAnimationFrame(() => {
-          if (container) container.scrollTop = container.scrollHeight - scrollPos;
+          if (container) {
+            const newHeight = container.scrollHeight;
+            container.scrollTop = newHeight - previousHeight + previousScrollTop;
+          }
         });
       }
     } catch (err) {
@@ -913,7 +924,7 @@ export default function Chat() {
         ) : (
           <div className="empty-chat">
             <div className="empty-content">
-              <h2>LiveTouch.chat</h2>
+              <h2>ЛайвТач.чат</h2>
               <p>Выберите чат, чтобы начать общение</p>
             </div>
           </div>
