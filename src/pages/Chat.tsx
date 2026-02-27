@@ -618,7 +618,14 @@ export default function Chat() {
   }, [offset, hasMore, isFetchingHistory, selectedChat, messages.length]);
 
   if (loading) return <h2 className="loader">Загрузка...</h2>;
-
+  const handleCopy = async (msg: DecryptedMessage) => {
+    if (!msg) return;
+    try {
+      await navigator.clipboard.writeText(msg.text);
+    } catch (err) {
+      console.error("Не удалось скопировать текст: ", err);
+    }
+  };
   return (
     <div className="chat-layout">
       <aside className="sidebar">
@@ -953,6 +960,14 @@ export default function Chat() {
             }}
           >
             Ответить
+          </button>
+          <button
+            onClick={() => {
+              handleCopy(contextMenu.msg);
+              setContextMenu(null);
+            }}
+          >
+            Копировать
           </button>
           <button
             className="delete-btn"
