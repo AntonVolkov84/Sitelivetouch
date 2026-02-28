@@ -418,7 +418,7 @@ export default function Chat() {
         console.error("Недопустимые символы");
         return;
       }
-      if (editMode && selectedMessage) {
+      if (!targetChatId && editMode && selectedMessage) {
         if (Number(selectedMessage.sender_id) === Number(user?.id)) {
           await handleUpdateMessage();
           cancelSpecialMode();
@@ -429,12 +429,10 @@ export default function Chat() {
           return;
         }
       }
-      if (!selectedChat) return;
-      const { chat_id, type: chat_type } = selectedChat;
       const keyPair = getStoredKeyPair();
       if (!keyPair) return showAlert("Ошибка", "Ключи не найдены");
       const { privateKey } = keyPair;
-      const participantsRes = await api.get(`/chats/${chat_id}/participants`);
+      const participantsRes = await api.get(`/chats/${finalChatId}/participants`);
       const participants = participantsRes.data;
       const encryptedPerUser = participants.map((p: UserChat) => {
         const publicKeyUint8 = decodeBase64(p.public_key);
@@ -445,14 +443,18 @@ export default function Chat() {
           nonce,
         };
       });
+      const targetChatData = targetChatId ? chats.find((c) => c.chat_id === targetChatId) : selectedChat;
       await api.post("/chats/send", {
         chat_id: finalChatId,
         messages: encryptedPerUser,
-        chatName: selectedChat.name,
-        reply_to_id: replyMessage?.id,
-        chat_type,
+        chatName: targetChatData?.name || "Чат",
+        reply_to_id: targetChatId ? null : replyMessage?.id,
+        chat_type: targetChatData?.type || "private",
       });
-      cancelSpecialMode();
+      if (!targetChatId) {
+        cancelSpecialMode();
+        setInputText("");
+      }
     } catch (err: any) {
       if (user) {
         logError(user.email, "Web Chat: handleSendWeb", err.response?.data || err.message);
@@ -1040,42 +1042,44 @@ export default function Chat() {
           <div className="modal-window forward-modal">
             <h3>Переслать сообщение</h3>
             <div className="forward-chats-list">
-              {chats.map((chat) => {
-                const isSelected = selectedChatIds.includes(chat.chat_id);
-                return (
-                  <div
-                    key={chat.chat_id}
-                    className={`forward-chat-item ${isSelected ? "selected" : ""}`}
-                    onClick={() => toggleChatSelection(chat.chat_id)}
-                  >
-                    <div className="checkbox-wrapper">
-                      <input type="checkbox" checked={isSelected} readOnly />
-                    </div>
+              {chats
+                .filter((c) => c.chat_id !== selectedChat?.chat_id)
+                .map((chat) => {
+                  const isSelected = selectedChatIds.includes(chat.chat_id);
+                  return (
+                    <div
+                      key={chat.chat_id}
+                      className={`forward-chat-item ${isSelected ? "selected" : ""}`}
+                      onClick={() => toggleChatSelection(chat.chat_id)}
+                    >
+                      <div className="checkbox-wrapper">
+                        <input type="checkbox" checked={isSelected} readOnly />
+                      </div>
 
-                    {chat.type === "private" ? (
-                      <>
-                        {chat.otherUser?.avatar_url ? (
-                          <img src={chat.otherUser.avatar_url} alt="avatar" className="participant-avatar" />
-                        ) : (
-                          <div className="avatar-placeholder-sm">{chat.otherUser?.username?.[0] || "?"}</div>
-                        )}
-                        <div className="chat-info-min">
-                          <span>
-                            {chat.otherUser?.username} {chat.otherUser?.usersurname}
-                          </span>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="avatar-placeholder-sm group">{chat.name?.[0] || "G"}</div>
-                        <div className="chat-info-min">
-                          <span>{chat.name}</span>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                );
-              })}
+                      {chat.type === "private" ? (
+                        <>
+                          {chat.otherUser?.avatar_url ? (
+                            <img src={chat.otherUser.avatar_url} alt="avatar" className="participant-avatar" />
+                          ) : (
+                            <div className="avatar-placeholder-sm">{chat.otherUser?.username?.[0] || "?"}</div>
+                          )}
+                          <div className="chat-info-min">
+                            <span>
+                              {chat.otherUser?.username} {chat.otherUser?.usersurname}
+                            </span>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="avatar-placeholder-sm group">{chat.name?.[0] || "G"}</div>
+                          <div className="chat-info-min">
+                            <span>{chat.name}</span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
             </div>
             <div className="modal-buttons">
               <button className="cancel" onClick={() => setIsForwardModalOpen(false)}>
