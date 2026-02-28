@@ -466,7 +466,7 @@
   transition: background 0.2s;
 }
 
-.modal-buttons button:first-child {
+.modal-buttons button {
   background-color: #4a8cff;
   color: white;
 }
@@ -810,7 +810,7 @@
 }
 /* Контекстное меню */
 .custom-context-menu {
-  position: fixed; /* Используем fixed, чтобы координаты x/y из JS работали точно */
+  position: fixed;
   background: white;
   border-radius: 10px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
@@ -825,6 +825,9 @@
 
 /* Кнопки в меню */
 .custom-context-menu button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   background: none;
   border: none;
   padding: 10px 15px;
@@ -835,7 +838,10 @@
   transition: background 0.2s;
   color: #333;
 }
-
+.menu-icon {
+  font-size: 18px; /* Размер иконки */
+  flex-shrink: 0;
+}
 /* ТО САМОЕ ЗАТЕМНЕНИЕ при наведении */
 .custom-context-menu button:hover {
   background-color: #f0f2f5; /* Легкое притемнение */
@@ -848,6 +854,72 @@
 
 .custom-context-menu button.delete-btn:hover {
   background-color: #fff0f0; /* Розоватое притемнение для удаления */
+}
+.forward-modal {
+  max-width: 450px;
+  width: 90%;
+}
+
+.forward-chats-list {
+  max-height: 350px;
+  overflow-y: auto;
+  margin-bottom: 20px;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+}
+
+.forward-chat-item {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  cursor: pointer;
+  transition: background 0.2s;
+  gap: 12px;
+  border-bottom: 1px solid #f9f9f9;
+}
+
+.forward-chat-item:hover {
+  background-color: #f5faff;
+}
+
+.forward-chat-item.selected {
+  background-color: #eef6ff;
+}
+
+.checkbox-wrapper input {
+  width: 18px !important;
+  height: 18px !important;
+  margin-bottom: 0 !important;
+  cursor: pointer;
+}
+
+.avatar-placeholder-sm {
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  background-color: #0088cc;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.avatar-placeholder-sm.group {
+  background-color: #34a853;
+}
+
+.participant-avatar {
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.chat-info-min span {
+  font-size: 14px;
+  font-weight: 500;
 }
 
 /* Анимация появления для плавности */

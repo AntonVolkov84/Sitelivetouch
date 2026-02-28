@@ -12,6 +12,13 @@ import { useWS } from "../context/WsContext";
 import { useModal } from "../context/ModalContext";
 import Message from "../components/Message";
 import ProfileView from "../components/ProfileView";
+import {
+  IoArrowUndoOutline,
+  IoCopyOutline,
+  IoPencilOutline,
+  IoTrashOutline,
+  IoArrowRedoOutline,
+} from "react-icons/io5";
 import "./Chat.css";
 import AddChatView from "../components/AddChatView";
 import { useUser } from "../context/UserContext";
@@ -46,6 +53,9 @@ export default function Chat() {
   const [hasMore, setHasMore] = useState(true);
   const [offset, setOffset] = useState(0);
   const LIMIT = 30;
+  const [isForwardModalOpen, setIsForwardModalOpen] = useState(false);
+  const [selectedChatIds, setSelectedChatIds] = useState<number[]>([]);
+  const [messageToForward, setMessageToForward] = useState<DecryptedMessage | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const navigate = useNavigate();
   const { ws } = useWS() || {};
@@ -53,6 +63,29 @@ export default function Chat() {
   const handleStartCall = () => {
     if (!selectedChat || !selectedChat.otherUser) return;
     navigate(`/call/${selectedChat.chat_id}?callerId=${selectedChat.otherUser.id}&isIncoming=false`);
+  };
+  const handleOpenForward = (msg: DecryptedMessage) => {
+    setMessageToForward(msg);
+    setSelectedChatIds([]);
+    setIsForwardModalOpen(true);
+    setContextMenu(null);
+  };
+  const toggleChatSelection = (chatId: number) => {
+    setSelectedChatIds((prev) => (prev.includes(chatId) ? prev.filter((id) => id !== chatId) : [...prev, chatId]));
+  };
+  const confirmForward = async () => {
+    if (!messageToForward || selectedChatIds.length === 0) return;
+    try {
+      await Promise.all(selectedChatIds.map((id) => handleSendWeb(messageToForward.text, id)));
+      showAlert("Успех", "Сообщение переслано");
+    } catch (err) {
+      console.error("Ошибка рассылки:", err);
+      showAlert("Ошибка", "Не удалось переслать в некоторые чаты");
+    } finally {
+      setIsForwardModalOpen(false);
+      setSelectedChatIds([]);
+      setMessageToForward(null);
+    }
   };
   useEffect(() => {
     setHasMore(true);
@@ -375,9 +408,11 @@ export default function Chat() {
     setMessages([]);
     if (selectedChat) loadMessages();
   }, [selectedChat]);
-  const handleSendWeb = async (msg?: string) => {
+  const handleSendWeb = async (msg?: string, targetChatId?: number) => {
     try {
       const textToSend = msg ?? inputText;
+      const finalChatId = targetChatId ?? selectedChat?.chat_id;
+      if (!finalChatId) return;
       if (!textToSend.trim()) return;
       if (/[<>]/.test(textToSend)) {
         console.error("Недопустимые символы");
@@ -411,7 +446,7 @@ export default function Chat() {
         };
       });
       await api.post("/chats/send", {
-        chat_id,
+        chat_id: finalChatId,
         messages: encryptedPerUser,
         chatName: selectedChat.name,
         reply_to_id: replyMessage?.id,
@@ -939,6 +974,28 @@ export default function Chat() {
       </main>
       {contextMenu && (
         <div className="custom-context-menu" style={{ top: contextMenu.y, left: contextMenu.x }}>
+          <button
+            onClick={() => {
+              handleReply(contextMenu.msg);
+              setContextMenu(null);
+            }}
+          >
+            <IoArrowUndoOutline className="menu-icon" />
+            <span>Ответить</span>
+          </button>
+          <button
+            onClick={() => {
+              handleCopy(contextMenu.msg);
+              setContextMenu(null);
+            }}
+          >
+            <IoCopyOutline className="menu-icon" />
+            <span>Копировать</span>
+          </button>
+          <button onClick={() => handleOpenForward(contextMenu.msg)}>
+            <IoArrowRedoOutline className="menu-icon" />
+            <span>Переслать</span>
+          </button>
           {Number(contextMenu.msg.sender_id) === Number(user?.id) && (
             <button
               onClick={() => {
@@ -950,25 +1007,10 @@ export default function Chat() {
                 inputRef.current?.focus();
               }}
             >
-              Изменить
+              <IoPencilOutline className="menu-icon" />
+              <span>Изменить</span>
             </button>
           )}
-          <button
-            onClick={() => {
-              handleReply(contextMenu.msg);
-              setContextMenu(null);
-            }}
-          >
-            Ответить
-          </button>
-          <button
-            onClick={() => {
-              handleCopy(contextMenu.msg);
-              setContextMenu(null);
-            }}
-          >
-            Копировать
-          </button>
           <button
             className="delete-btn"
             onClick={() => {
@@ -976,7 +1018,8 @@ export default function Chat() {
               setContextMenu(null);
             }}
           >
-            Удалить
+            <IoTrashOutline className="menu-icon" />
+            <span>Удалить</span>
           </button>
           {Number(contextMenu.msg.sender_id) === Number(user?.id) && (
             <button
@@ -986,9 +1029,63 @@ export default function Chat() {
                 setContextMenu(null);
               }}
             >
-              Удалить у всех
+              <IoTrashOutline className="menu-icon" />
+              <span>Удалить у всех</span>
             </button>
           )}
+        </div>
+      )}
+      {isForwardModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-window forward-modal">
+            <h3>Переслать сообщение</h3>
+            <div className="forward-chats-list">
+              {chats.map((chat) => {
+                const isSelected = selectedChatIds.includes(chat.chat_id);
+                return (
+                  <div
+                    key={chat.chat_id}
+                    className={`forward-chat-item ${isSelected ? "selected" : ""}`}
+                    onClick={() => toggleChatSelection(chat.chat_id)}
+                  >
+                    <div className="checkbox-wrapper">
+                      <input type="checkbox" checked={isSelected} readOnly />
+                    </div>
+
+                    {chat.type === "private" ? (
+                      <>
+                        {chat.otherUser?.avatar_url ? (
+                          <img src={chat.otherUser.avatar_url} alt="avatar" className="participant-avatar" />
+                        ) : (
+                          <div className="avatar-placeholder-sm">{chat.otherUser?.username?.[0] || "?"}</div>
+                        )}
+                        <div className="chat-info-min">
+                          <span>
+                            {chat.otherUser?.username} {chat.otherUser?.usersurname}
+                          </span>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="avatar-placeholder-sm group">{chat.name?.[0] || "G"}</div>
+                        <div className="chat-info-min">
+                          <span>{chat.name}</span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            <div className="modal-buttons">
+              <button className="cancel" onClick={() => setIsForwardModalOpen(false)}>
+                Отмена
+              </button>
+              <button disabled={selectedChatIds.length === 0} onClick={confirmForward}>
+                Переслать ({selectedChatIds.length})
+              </button>
+            </div>
+          </div>
         </div>
       )}
       {/* Модалка добавления */}
