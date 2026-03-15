@@ -56,6 +56,9 @@ export default function Chat() {
   const [isForwardModalOpen, setIsForwardModalOpen] = useState(false);
   const [selectedChatIds, setSelectedChatIds] = useState<number[]>([]);
   const [messageToForward, setMessageToForward] = useState<DecryptedMessage | null>(null);
+  const [onlineUsers, setOnlineUsers] = useState<number[]>([]);
+  const [typingUsers, setTypingUsers] = useState<number[]>([]);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const navigate = useNavigate();
   const { ws } = useWS() || {};
@@ -64,6 +67,97 @@ export default function Chat() {
     if (!selectedChat || !selectedChat.otherUser) return;
     navigate(`/call/${selectedChat.chat_id}?callerId=${selectedChat.otherUser.id}&isIncoming=false`);
   };
+  const handleTyping = () => {
+    if (!ws || !user || !selectedChat) return;
+    if (!typingTimeoutRef.current) {
+      ws.send(
+        JSON.stringify({
+          type: "typing",
+          chatId: selectedChat.chat_id,
+          userId: user.id,
+          isTyping: true,
+        }),
+      );
+    }
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = setTimeout(() => {
+      ws.send(
+        JSON.stringify({
+          type: "typing",
+          chatId: selectedChat.chat_id,
+          userId: user.id,
+          isTyping: false,
+        }),
+      );
+      typingTimeoutRef.current = null;
+    }, 2500);
+  };
+  useEffect(() => {
+    if (ws?.readyState === 1 && selectedChat?.chat_id) {
+      console.log("🚀 Отправляю join-chat для чата:", selectedChat.chat_id);
+      ws.send(
+        JSON.stringify({
+          type: "join-chat",
+          chat_id: selectedChat.chat_id,
+          userId: user?.id,
+        }),
+      );
+    }
+  }, [ws, selectedChat?.chat_id]);
+  useEffect(() => {
+    if (!ws) {
+      console.warn("WS: Соединение отсутствует");
+      return;
+    }
+    console.log("WS: Подписка на сообщения для чата:", selectedChat?.chat_id);
+    const handleMessage = (event: MessageEvent) => {
+      try {
+        const data = JSON.parse(event.data);
+        console.log(`[WS IN] Type: ${data.type}`, data);
+        if (Number(data.chat_id) !== Number(selectedChat?.chat_id)) {
+          console.log(`[WS SKIP] Чат не совпал: ${data.chat_id} !== ${selectedChat?.chat_id}`);
+          return;
+        }
+        switch (data.type) {
+          case "room_snapshot":
+            const ids = data.online_users ? data.online_users.map(Number) : [];
+            console.log("✅ Снапшот принят. Онлайн юзеры:", ids);
+            setOnlineUsers(ids);
+            break;
+          case "user_status_update":
+            const uid = Number(data.user_id);
+            console.log(`👤 Статус юзера ${uid} изменился на: ${data.status}`);
+            if (data.status === "online") {
+              setOnlineUsers((prev) => [...new Set([...prev, uid])]);
+            } else {
+              setOnlineUsers((prev) => prev.filter((id) => id !== uid));
+            }
+            break;
+          case "user_typing_update":
+            const tId = Number(data.user_id);
+            console.log(`✍️ Юзер ${tId} ${data.isTyping ? "печатает" : "перестал печатать"}`);
+            if (data.isTyping) {
+              setTypingUsers((prev) => [...new Set([...prev, tId])]);
+            } else {
+              setTypingUsers((prev) => prev.filter((id) => id !== tId));
+            }
+            break;
+          default:
+            console.log("ℹ️ Получено другое событие:", data.type);
+        }
+      } catch (err) {
+        console.error("❌ Ошибка при обработке сообщения WS:", err, event.data);
+      }
+    };
+    ws.addEventListener("message", handleMessage);
+    const handleClose = () => console.error("🚨 WS ПОТЕРЯНО СОЕДИНЕНИЕ (Сервер упал?)");
+    ws.addEventListener("close", handleClose);
+    return () => {
+      ws.removeEventListener("message", handleMessage);
+      ws.removeEventListener("close", handleClose);
+    };
+  }, [ws, selectedChat?.chat_id]);
+
   const handleOpenForward = (msg: DecryptedMessage) => {
     setMessageToForward(msg);
     setSelectedChatIds([]);
@@ -684,7 +778,6 @@ export default function Chat() {
                 <span className="search-icon">🔍</span>
               </div>
             </div>
-
             <div className="chat-list">
               {filteredChats.map((item) => {
                 const userInfo = item.type === "private" ? item.otherUser : null;
@@ -764,6 +857,22 @@ export default function Chat() {
                     : selectedChat.name}
                 </h4>
                 {selectedChat.type === "group" && <span className="sub-text">нажмите, чтобы увидеть всех</span>}
+                {selectedChat.type === "private" &&
+                  selectedChat.otherUser &&
+                  (() => {
+                    const companionId = Number(selectedChat.otherUser.id);
+                    const isTyping = typingUsers.includes(companionId);
+                    const isOnline = onlineUsers.includes(companionId);
+
+                    return (
+                      <span
+                        className={`sub-text ${isTyping ? "typing" : isOnline ? "online" : "offline"}`}
+                        style={{ fontSize: "12px", color: isTyping || isOnline ? "#4A8CFF" : "#888" }}
+                      >
+                        {isTyping ? "Печатает..." : isOnline ? "В сети" : "Не в сети"}
+                      </span>
+                    );
+                  })()}
               </div>
 
               <div className="header-actions">
@@ -914,6 +1023,7 @@ export default function Chat() {
                     value={inputText}
                     onChange={(e) => {
                       setInputText(cleanInput(e.target.value));
+                      handleTyping();
                       e.target.style.height = "auto";
                       e.target.style.height = `${e.target.scrollHeight}px`;
                     }}
@@ -1120,25 +1230,45 @@ export default function Chat() {
           </div>
         </div>
       )}
-      {/* Модалка списка участников */}
       {isParticipantsModalOpen && (
         <div className="modal-overlay" onClick={() => setIsParticipantsModalOpen(false)}>
           <div className="modal-window participants-list" onClick={(e) => e.stopPropagation()}>
-            <h3>Участники группы</h3>
-            <div className="list-container">
-              {participants.map((p) => (
-                <div key={p.id} className="participant-item">
-                  <img src={p.avatar_url || "/default-avatar.png"} alt="avatar" />
-                  <div className="p-info">
-                    <span>
-                      {p.username} {p.usersurname}
-                    </span>
-                    {p.id === user?.id && <small>(Вы)</small>}
-                  </div>
-                </div>
-              ))}
+            <div className="modal-header">
+              <h3>Участники группы</h3>
             </div>
-            <button className="participant-item-btn" onClick={() => setIsParticipantsModalOpen(false)}>
+            <div className="list-container">
+              {participants.map((p) => {
+                const isOnline = onlineUsers.includes(Number(p.id));
+                const isTyping = typingUsers.includes(Number(p.id));
+                const isMe = p.id === user?.id;
+                return (
+                  <div key={p.id} className="participant-item">
+                    <div className="avatar-wrapper">
+                      <img src={p.avatar_url || "/default-avatar.png"} className="participant-avatar" alt="" />
+                      {isOnline && <div className="online-indicator" />}
+                    </div>
+                    <div className="p-info">
+                      <div className="p-name-row">
+                        <span className="p-name">
+                          {p.username} {p.usersurname}
+                        </span>
+                        {isMe && <span className="me-badge">Вы</span>}
+                      </div>
+                      {isMe ? (
+                        <div className="p-status online" style={{ color: "#4A8CFF" }}>
+                          Это вы
+                        </div>
+                      ) : (
+                        <div className={`p-status ${isTyping ? "typing" : isOnline ? "online" : "offline"}`}>
+                          {isTyping ? "Печатает..." : isOnline ? "В сети" : "Не в сети"}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <button className="modal-close-btn" onClick={() => setIsParticipantsModalOpen(false)}>
               Закрыть
             </button>
           </div>

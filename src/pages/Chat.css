@@ -921,8 +921,112 @@
   font-size: 14px;
   font-weight: 500;
 }
+.participant-item {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  border-bottom: 1px solid #f0f0f0;
+}
 
-/* Анимация появления для плавности */
+.avatar-wrapper {
+  position: relative;
+  margin-right: 15px;
+}
+
+.participant-avatar {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.online-indicator {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 10px;
+  height: 10px;
+  background-color: #4caf50;
+  border: 2px solid #fff;
+  border-radius: 50%;
+}
+
+.p-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.p-name {
+  font-weight: 500;
+  font-size: 15px;
+}
+
+.me-badge {
+  font-size: 11px;
+  color: #4a8cff;
+  background: #eef4ff;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.p-status {
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.p-status.online {
+  color: #4caf50;
+}
+.p-status.offline {
+  color: #9e9e9e;
+}
+.p-status.typing {
+  color: #4a8cff;
+  font-weight: 600;
+  animation: pulse 1.5s infinite;
+}
+.modal-close-btn {
+  width: 100%;
+  padding: 12px;
+  background-color: #f0f2f5; /* Светло-серый фон */
+  color: #555;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  margin-top: 20px;
+  transition:
+    background-color 0.2s,
+    transform 0.1s;
+}
+.chat-sub {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px; /* подбери под свою ширину сайдбара */
+}
+
+.modal-close-btn:hover {
+  background-color: #e4e6e9; /* Чуть темнее при наведении */
+}
+
+.modal-close-btn:active {
+  transform: scale(0.98); /* Эффект нажатия */
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 1;
+  }
+}
 @keyframes contextAppear {
   from {
     opacity: 0;
