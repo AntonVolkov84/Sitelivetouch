@@ -58,7 +58,7 @@ export default function Chat() {
   const [messageToForward, setMessageToForward] = useState<DecryptedMessage | null>(null);
   const [onlineUsers, setOnlineUsers] = useState<number[]>([]);
   const [typingUsers, setTypingUsers] = useState<number[]>([]);
-  const [canLoadHistory, setCanLoadHistory] = useState(false);
+  const [_, setCanLoadHistory] = useState(false);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const navigate = useNavigate();
