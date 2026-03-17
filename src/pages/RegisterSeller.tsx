@@ -344,7 +344,7 @@ export default function RegisterSeller() {
                     <div className="img-placeholder">Нет фото</div>
                   )}
                   <h4>{p.name}</h4>
-                  <p className="price">{p.price} грн</p>
+                  <p className="price">{p.price} руб</p>
                   <p className="qty">Количество: {parseFloat(p.quantities).toFixed(3)} кг/шт</p>
                   <div className="product-card-actions">
                     <button className="edit-btn" onClick={() => handleEditClick(p)}>
@@ -384,7 +384,7 @@ export default function RegisterSeller() {
                   />
                   <input
                     type="number"
-                    placeholder="Цена (грн)"
+                    placeholder="Цена (руб)"
                     value={newProduct.price}
                     onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
                   />

@@ -58,6 +58,7 @@ export default function Chat() {
   const [messageToForward, setMessageToForward] = useState<DecryptedMessage | null>(null);
   const [onlineUsers, setOnlineUsers] = useState<number[]>([]);
   const [typingUsers, setTypingUsers] = useState<number[]>([]);
+  const [canLoadHistory, setCanLoadHistory] = useState(false);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const navigate = useNavigate();
@@ -184,7 +185,13 @@ export default function Chat() {
   useEffect(() => {
     setHasMore(true);
     setMessages([]);
-    if (selectedChat) loadMessages(1);
+    setOffset(0);
+    setCanLoadHistory(false);
+    if (selectedChat) {
+      loadMessages(0);
+      const timer = setTimeout(() => setCanLoadHistory(true), 1000);
+      return () => clearTimeout(timer);
+    }
   }, [selectedChat]);
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!event.target.files) return;
@@ -426,12 +433,7 @@ export default function Chat() {
       "Удалить у всех",
     );
   };
-  // useEffect(() => {
-  //   const container = document.querySelector(".messages-container");
-  //   if (container && shouldScrollToBottom) {
-  //     container.scrollTop = container.scrollHeight;
-  //   }
-  // }, [messages, shouldScrollToBottom]);
+
   useEffect(() => {
     const container = document.querySelector(".messages-container");
     if (!container) return;
@@ -478,9 +480,14 @@ export default function Chat() {
       if (currentOffset === 0) {
         setMessages(newDecrypted);
         setOffset(LIMIT);
-        setTimeout(() => {
-          if (container) container.scrollTop = container.scrollHeight;
-        }, 0);
+        requestAnimationFrame(() => {
+          if (container) {
+            container.scrollTo({ top: container.scrollHeight, behavior: "instant" });
+            setTimeout(() => {
+              container.scrollTop = container.scrollHeight;
+            }, 250);
+          }
+        });
       } else {
         setMessages((prev) => [...newDecrypted, ...prev]);
         setOffset(currentOffset + LIMIT);
@@ -731,15 +738,20 @@ export default function Chat() {
     const container = document.querySelector(".messages-container");
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasMore && !isFetchingHistory) {
-          console.log("Triggering loadMessages with offset:", offset);
+        const container = document.querySelector(".messages-container");
+        if (
+          entries[0].isIntersecting &&
+          hasMore &&
+          !isFetchingHistory &&
+          messages.length >= LIMIT &&
+          container &&
+          container.scrollTop < 200
+        ) {
+          console.log("Observer trigger: loading history...");
           loadMessages(offset);
         }
       },
-      {
-        threshold: 0.1,
-        root: container,
-      },
+      { threshold: 0.1, root: container },
     );
 
     const target = document.querySelector("#scroll-sentinel");

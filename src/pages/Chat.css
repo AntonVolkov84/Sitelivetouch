@@ -235,6 +235,7 @@
 .messages-container {
   flex: 1;
   overflow-y: auto;
+  overflow-anchor: none;
   padding: 20px;
   display: flex;
   flex-direction: column;
@@ -976,7 +977,7 @@
 }
 
 .p-status.online {
-  color: #4caf50;
+  color: #4a8cff;
 }
 .p-status.offline {
   color: #9e9e9e;

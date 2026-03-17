@@ -1,0 +1,143 @@
+/* Контейнер главной страницы */
+.home-screen {
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  color: #333;
+}
+
+.home-screen h1 {
+  font-size: 2rem;
+  margin-bottom: 10px;
+}
+
+/* Кнопка вызова фидбека */
+.feedback-trigger-btn {
+  margin-top: 20px;
+  padding: 12px 24px;
+  background-color: #4a8cff; /* Твой основной синий */
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.feedback-trigger-btn:hover {
+  background-color: #3571d9;
+}
+
+/* Оверлей (фон модалки) */
+.feedback-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px); /* Эффект размытия фона */
+}
+
+/* Карточка формы */
+.feedback-card {
+  background: white;
+  padding: 30px;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 450px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.feedback-title {
+  margin-bottom: 20px;
+  font-size: 1.5rem;
+  color: #222;
+}
+
+/* Поля ввода */
+.feedback-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  text-align: left;
+}
+
+.feedback-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.feedback-group label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #666;
+}
+
+.feedback-group input,
+.feedback-group textarea {
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 1rem;
+}
+
+.feedback-group input:focus,
+.feedback-group textarea:focus {
+  outline: none;
+  border-color: #4a8cff;
+  box-shadow: 0 0 0 2px rgba(74, 140, 255, 0.2);
+}
+
+/* Кнопки в форме */
+.feedback-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.btn-send {
+  flex: 2;
+  padding: 12px;
+  background: #4a8cff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-cancel {
+  flex: 1;
+  padding: 12px;
+  background: #f0f0f0;
+  color: #555;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.btn-send:disabled {
+  background: #a5c6ff;
+  cursor: not-allowed;
+}
