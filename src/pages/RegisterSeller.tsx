@@ -22,6 +22,7 @@ export default function RegisterSeller() {
     location_lat: 50.4501,
     location_lng: 30.5234,
     geohash: "",
+    service_radius: 500,
   });
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [products, setProducts] = useState<IProduct[]>([]);
@@ -301,6 +302,20 @@ export default function RegisterSeller() {
               </div>
             </div>
             <div className="setting-group">
+              <label>Радиус доставки</label>
+              <select
+                className="sidebar-input"
+                value={formData.service_radius}
+                onChange={(e) => setFormData({ ...formData, service_radius: parseInt(e.target.value) })}
+              >
+                <option value={500}>500 метров</option>
+                <option value={1000}>1 км</option>
+                <option value={1500}>1.5 км</option>
+                <option value={2000}>2 км</option>
+                <option value={2500}>2.5 км</option>
+              </select>
+            </div>
+            <div className="setting-group">
               <label>Реквизиты</label>
               <textarea
                 value={formData.payment_details}
@@ -434,7 +449,7 @@ export default function RegisterSeller() {
               className="seller-form-input"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              placeholder="+380..."
+              placeholder="+7..."
             />
             <button className="seller-form-btn" onClick={handleStepOne}>
               Далее
@@ -463,6 +478,22 @@ export default function RegisterSeller() {
                 value={formData.closing_time}
                 onChange={(e) => setFormData({ ...formData, closing_time: e.target.value })}
               />
+            </div>
+            <div className="seller-form-group" style={{ marginBottom: "15px" }}>
+              <label style={{ fontSize: "0.9rem", color: "#666", display: "block", marginBottom: "5px" }}>
+                Радиус доставки (макс. 2500м)
+              </label>
+              <select
+                className="seller-form-input"
+                value={formData.service_radius}
+                onChange={(e) => setFormData({ ...formData, service_radius: parseInt(e.target.value) })}
+              >
+                <option value={500}>500 метров</option>
+                <option value={1000}>1 км</option>
+                <option value={1500}>1.5 км</option>
+                <option value={2000}>2 км</option>
+                <option value={2500}>2.5 км</option>
+              </select>
             </div>
             <textarea
               className="seller-form-textarea"

@@ -153,6 +153,7 @@ export interface Shop {
   closing_time: string;
   payment_details: string;
   products: Product[];
+  distance: number;
 }
 
 export interface ApiResponse {

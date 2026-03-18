@@ -95,7 +95,6 @@ export default function Chat() {
   };
   useEffect(() => {
     if (ws?.readyState === 1 && selectedChat?.chat_id) {
-      console.log("🚀 Отправляю join-chat для чата:", selectedChat.chat_id);
       ws.send(
         JSON.stringify({
           type: "join-chat",
@@ -110,24 +109,19 @@ export default function Chat() {
       console.warn("WS: Соединение отсутствует");
       return;
     }
-    console.log("WS: Подписка на сообщения для чата:", selectedChat?.chat_id);
     const handleMessage = (event: MessageEvent) => {
       try {
         const data = JSON.parse(event.data);
-        console.log(`[WS IN] Type: ${data.type}`, data);
         if (Number(data.chat_id) !== Number(selectedChat?.chat_id)) {
-          console.log(`[WS SKIP] Чат не совпал: ${data.chat_id} !== ${selectedChat?.chat_id}`);
           return;
         }
         switch (data.type) {
           case "room_snapshot":
             const ids = data.online_users ? data.online_users.map(Number) : [];
-            console.log("✅ Снапшот принят. Онлайн юзеры:", ids);
             setOnlineUsers(ids);
             break;
           case "user_status_update":
             const uid = Number(data.user_id);
-            console.log(`👤 Статус юзера ${uid} изменился на: ${data.status}`);
             if (data.status === "online") {
               setOnlineUsers((prev) => [...new Set([...prev, uid])]);
             } else {
@@ -136,7 +130,6 @@ export default function Chat() {
             break;
           case "user_typing_update":
             const tId = Number(data.user_id);
-            console.log(`✍️ Юзер ${tId} ${data.isTyping ? "печатает" : "перестал печатать"}`);
             if (data.isTyping) {
               setTypingUsers((prev) => [...new Set([...prev, tId])]);
             } else {
@@ -747,7 +740,6 @@ export default function Chat() {
           container &&
           container.scrollTop < 200
         ) {
-          console.log("Observer trigger: loading history...");
           loadMessages(offset);
         }
       },

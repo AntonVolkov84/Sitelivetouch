@@ -20,6 +20,7 @@ export default function CallPage() {
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const remoteIceCandidatesBuffer = useRef<RTCIceCandidateInit[]>([]);
+  const [isAnswered, setIsAnswered] = useState(false);
 
   const pc = useRef<RTCPeerConnection>(
     new RTCPeerConnection({
@@ -66,6 +67,7 @@ export default function CallPage() {
       if (isIncoming && initialOffer && !processedOfferRef.current && ws?.readyState === WebSocket.OPEN) {
         processedOfferRef.current = true;
         stopRingtone();
+        setIsAnswered(true);
         try {
           await pc.current.setRemoteDescription(new RTCSessionDescription(initialOffer));
           const answer = await pc.current.createAnswer();
@@ -95,6 +97,7 @@ export default function CallPage() {
   useEffect(() => {
     pc.current.ontrack = (event) => {
       stopRingtone();
+      setIsAnswered(true);
       if (remoteVideoRef.current && event.streams[0]) {
         remoteVideoRef.current.srcObject = event.streams[0];
       }
@@ -137,6 +140,7 @@ export default function CallPage() {
         }
         if (signal.type === "answer") {
           stopRingtone();
+          setIsAnswered(true);
           await pc.current.setRemoteDescription(new RTCSessionDescription(signal.answer));
           while (remoteIceCandidatesBuffer.current.length > 0) {
             const cand = remoteIceCandidatesBuffer.current.shift();
@@ -191,7 +195,16 @@ export default function CallPage() {
   const endCall = (sendSignal = true) => {
     stopRingtone();
     if (sendSignal && ws && user) {
-      ws.send(JSON.stringify({ type: "call-ended", chatId: Number(chatId), sender: user.id, target: callerId }));
+      ws.send(
+        JSON.stringify({
+          type: "call-ended",
+          chatId: Number(chatId),
+          sender: user.id,
+          target: callerId,
+          wasAnswered: isAnswered,
+          isCaller: !isIncoming,
+        }),
+      );
     }
     localStream?.getTracks().forEach((t) => t.stop());
     pc.current.close();

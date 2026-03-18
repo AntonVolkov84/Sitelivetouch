@@ -7,7 +7,8 @@ import RegisterSeller from "./pages/RegisterSeller";
 import Chat from "./pages/Chat";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import CallPage from "./pages/CallPage";
-import Logo from "./assets/removebg.png";
+// import Logo from "./assets/removebg.png";
+import LogoNew from "./assets/newiconbdsite.png";
 import NotFound from "./pages/NotFound";
 import NearbyShopsList from "./components/NearbyShopsList";
 
@@ -48,7 +49,7 @@ function App() {
         }}
       >
         <img
-          src={Logo}
+          src={LogoNew}
           alt="ЛайвТач логотип"
           style={{
             height: "32px",
@@ -79,7 +80,7 @@ function App() {
         }}
       >
         <NavLink to="/nearby" style={getNavLinkStyle}>
-          📍 Рядом
+          Рядом
         </NavLink>
         <NavLink to="/" style={getNavLinkStyle}>
           Домашняя

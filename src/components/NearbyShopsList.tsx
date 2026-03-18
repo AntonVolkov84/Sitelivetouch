@@ -4,12 +4,14 @@ import { type Shop } from "../types";
 import "./NearbyShopsList.css";
 import { isShopOpen } from "../utils/workingTime";
 import LocationPicker from "./LocationPicker";
+import { logError } from "../utils/logger";
+import { useUser } from "../context/UserContext";
 const NearbyShopsList: React.FC = () => {
   const [shops, setShops] = useState<Shop[]>([]);
   const [loading, setLoading] = useState(false);
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
   const [tempLocation, setTempLocation] = useState<{ lat: number; lng: number } | null>(null);
-
+  const { user } = useUser();
   useEffect(() => {
     handleSearch();
   }, []);
@@ -19,9 +21,7 @@ const NearbyShopsList: React.FC = () => {
     try {
       const result = await getNearbyShopsService();
       const activeShops = (result.shops || []).filter((shop: Shop) => isShopOpen(shop.opening_time, shop.closing_time));
-
       setShops(activeShops);
-
       if (result.coords) {
         setTempLocation({
           lat: result.coords.latitude,
@@ -32,6 +32,9 @@ const NearbyShopsList: React.FC = () => {
         setIsMapModalOpen(true);
       }
     } catch (err: any) {
+      if (user) {
+        logError(user.email, "WEB_NearbyShopsList: handleSearch", err);
+      }
       console.log(err.message || "Произошла ошибка");
     } finally {
       setLoading(false);
@@ -53,6 +56,9 @@ const NearbyShopsList: React.FC = () => {
         setShops(activeShops);
       }
     } catch (err) {
+      if (user) {
+        logError(user.email, "WEB_NearbyShopsList: handleSearchWithNewCoords", err);
+      }
       console.log("Ошибка при поиске по новым координатам", err);
     } finally {
       setLoading(false);
@@ -85,6 +91,9 @@ const NearbyShopsList: React.FC = () => {
             <div className="shop-info">
               <h3>{shop.shop_name}</h3>
               <p>📞 {shop.phone}</p>
+              <div className="shop-distance">
+                📍 {shop.distance < 1000 ? `${shop.distance} м` : `${(shop.distance / 1000).toFixed(1)} км`} от вас
+              </div>
             </div>
             <div className="products-grid">
               {shop.products.map((product) => (

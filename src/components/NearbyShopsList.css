@@ -9,7 +9,6 @@
   background-color: #fff;
 }
 
-/* Шапка страницы */
 .nearby-header {
   display: flex;
   justify-content: space-around;
@@ -206,4 +205,10 @@
   .nearby-header h2 {
     font-size: 20px;
   }
+}
+.shop-distance {
+  color: #197887;
+  font-weight: bold;
+  font-size: 14px;
+  margin-top: 5px;
 }
