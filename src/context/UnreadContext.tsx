@@ -19,7 +19,7 @@ export const UnreadProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   useEffect(() => {
     const unreadCount = unreadChats.size;
-    const baseTitle = "ЛайвТач";
+    const baseTitle = "ЛТ";
     if (unreadCount > 0) {
       document.title = `(${unreadCount}) ${baseTitle}`;
     } else {

@@ -148,7 +148,7 @@ export default function Login() {
   // };
   return (
     <div className="login-card">
-      <h2 className="login-card__title">Вход в ЛайвТач</h2>
+      <h2 className="login-card__title">Вход в ЛТ</h2>
       <button type="button" className="login-card__qr-button" onClick={handleQrStart}>
         <span style={{ marginRight: "8px" }}>📱</span>
         Войти по QR-коду
@@ -236,7 +236,7 @@ export default function Login() {
           >
             <h3 style={{ marginBottom: "10px", color: "#333" }}>Сканируйте код</h3>
             <p style={{ fontSize: "0.9rem", color: "#666", marginBottom: "20px" }}>
-              Откройте меню профиля в приложении ЛайвТач и выберите «Подключить компьютер»
+              Откройте меню профиля в приложении ЛТ и выберите «Подключить компьютер»
             </p>
 
             <div style={{ background: "white", padding: "10px", borderRadius: "10px" }}>

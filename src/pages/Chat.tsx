@@ -1082,7 +1082,7 @@ export default function Chat() {
         ) : (
           <div className="empty-chat">
             <div className="empty-content">
-              <h2>ЛайвТач.чат</h2>
+              <h2>ЛТ</h2>
               <p>Выберите чат, чтобы начать общение</p>
             </div>
           </div>

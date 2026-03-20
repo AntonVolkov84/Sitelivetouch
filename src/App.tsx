@@ -7,7 +7,6 @@ import RegisterSeller from "./pages/RegisterSeller";
 import Chat from "./pages/Chat";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import CallPage from "./pages/CallPage";
-// import Logo from "./assets/removebg.png";
 import LogoNew from "./assets/newiconbdsite.png";
 import NotFound from "./pages/NotFound";
 import NearbyShopsList from "./components/NearbyShopsList";
@@ -50,7 +49,7 @@ function App() {
       >
         <img
           src={LogoNew}
-          alt="ЛайвТач логотип"
+          alt="ЛТ логотип"
           style={{
             height: "32px",
             width: "auto",
@@ -65,7 +64,7 @@ function App() {
             color: "#333",
           }}
         >
-          ЛайвТач<span style={{ color: "#ff4d4d" }}>.чат</span>
+          ЛТ
         </span>
       </div>
       <nav
