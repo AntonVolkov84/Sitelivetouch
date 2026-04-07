@@ -286,8 +286,32 @@
 .them .message-like-tag.liked {
   background: #ffebeb;
 }
+.highlight-flash {
+  animation: flash-bg 2s ease-out;
+}
+/* Стили для цитаты, чтобы она выглядела кликабельной */
+.message-reply-quote {
+  cursor: pointer;
+  border-left: 3px solid #4a8cff;
+  background: rgba(0, 0, 0, 0.05);
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin-bottom: 6px;
+  transition: background 0.2s;
+}
 
-/* Анимация пульсации при лайке, как мы делали в моб. версии */
+.message-reply-quote:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+@keyframes flash-bg {
+  0% {
+    background-color: rgba(74, 140, 255, 0.4);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
 @keyframes heart-pop {
   0% {
     transform: scale(1);

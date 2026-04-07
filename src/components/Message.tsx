@@ -1,6 +1,7 @@
 import { type DecryptedMessage } from "../types";
 import "./Message.css";
 import { IoHeart } from "react-icons/io5";
+import { useModal } from "../context/ModalContext";
 
 interface PropsMessage {
   message: DecryptedMessage;
@@ -12,6 +13,7 @@ interface PropsMessage {
 }
 
 export default function Message({ message, isMe, onPressProfile, onContextMenu, onLike, allMessages }: PropsMessage) {
+  const { showAlert } = useModal();
   const repliedMsg = message.reply_to_id
     ? allMessages.find(
         (m) =>
@@ -45,13 +47,30 @@ export default function Message({ message, isMe, onPressProfile, onContextMenu, 
   };
 
   return (
-    <div onContextMenu={(e) => onContextMenu?.(e, message)} className={`message-wrapper ${isMe ? "me" : "them"}`}>
+    <div
+      id={`msg-${message.id}`}
+      onContextMenu={(e) => onContextMenu?.(e, message)}
+      className={`message-wrapper ${isMe ? "me" : "them"}`}
+    >
       <div className="message-bubble">
         {repliedMsg && (
           <div
             className="message-reply-quote"
             onClick={() => {
-              document.getElementById(`msg-${repliedMsg.id}`)?.scrollIntoView({ behavior: "smooth" });
+              const targetId = `msg-${repliedMsg.id}`;
+              const targetElement = document.getElementById(targetId);
+              if (targetElement) {
+                targetElement.scrollIntoView({
+                  behavior: "smooth",
+                  block: "center",
+                });
+                targetElement.classList.add("highlight-flash");
+                setTimeout(() => {
+                  targetElement.classList.remove("highlight-flash");
+                }, 2000);
+              } else {
+                showAlert("Сообщение слишком старое и еще не подгружено", "Прокрутите чат вверх.");
+              }
             }}
           >
             <div className="reply-quote-content">
