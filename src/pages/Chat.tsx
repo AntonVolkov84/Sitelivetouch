@@ -12,6 +12,7 @@ import { useWS } from "../context/WsContext";
 import { useModal } from "../context/ModalContext";
 import Message from "../components/Message";
 import ProfileView from "../components/ProfileView";
+import { IoHeart } from "react-icons/io5";
 import {
   IoArrowUndoOutline,
   IoCopyOutline,
@@ -109,6 +110,7 @@ export default function Chat() {
       console.warn("WS: Соединение отсутствует");
       return;
     }
+
     const handleMessage = (event: MessageEvent) => {
       try {
         const data = JSON.parse(event.data);
@@ -151,7 +153,35 @@ export default function Chat() {
       ws.removeEventListener("close", handleClose);
     };
   }, [ws, selectedChat?.chat_id]);
-
+  const handleToggleLike = (messageId: number) => {
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+      console.warn("WS connection is not open");
+      return;
+    }
+    if (!user || !selectedChat?.chat_id) return;
+    ws.send(
+      JSON.stringify({
+        type: "toggle-like",
+        messageId: messageId,
+        chatId: selectedChat.chat_id,
+        userId: user.id,
+      }),
+    );
+    setMessages((prev) =>
+      prev.map((msg) => {
+        if (Number(msg.id) === messageId) {
+          const alreadyLiked = msg.is_liked;
+          const currentCount = Number(msg.likes_count) || 0;
+          return {
+            ...msg,
+            is_liked: !alreadyLiked,
+            likes_count: alreadyLiked ? Math.max(0, currentCount - 1) : currentCount + 1,
+          };
+        }
+        return msg;
+      }),
+    );
+  };
   const handleOpenForward = (msg: DecryptedMessage) => {
     setMessageToForward(msg);
     setSelectedChatIds([]);
@@ -634,6 +664,29 @@ export default function Chat() {
           );
           return;
         }
+        if (data.type === "like_update") {
+          const { messageId, totalLikes, parentId, userId, action } = data;
+          setMessages((prev) =>
+            prev.map((msg) => {
+              // Твоя фирменная логика сопоставления ID
+              const isMatch =
+                Number(msg.id) === Number(messageId) ||
+                (msg.parent_id && Number(msg.parent_id) === Number(parentId)) ||
+                Number(msg.id) === Number(parentId);
+
+              if (isMatch) {
+                return {
+                  ...msg,
+                  likes_count: totalLikes,
+                  is_liked:
+                    Number(userId) === Number(user?.id) ? action === "added" || action === "restored" : msg.is_liked,
+                };
+              }
+              return msg;
+            }),
+          );
+          return;
+        }
         if (data.type === "message_updated" && Number(data.chat_id) === Number(selectedChat?.chat_id)) {
           const myCopy = data.messages?.find(
             (m: EncryptedMessageFromServer) => Number(m.user_id || m.recipient_id) === Number(user?.id),
@@ -1090,6 +1143,16 @@ export default function Chat() {
       </main>
       {contextMenu && (
         <div className="custom-context-menu" style={{ top: contextMenu.y, left: contextMenu.x }}>
+          <button onClick={() => handleToggleLike(Number(contextMenu.msg.id))}>
+            <IoHeart
+              style={{
+                color: contextMenu.msg.is_liked ? "#ff3b30" : "inherit",
+                marginRight: "8px",
+                verticalAlign: "middle",
+              }}
+            />
+            {contextMenu.msg.is_liked ? "Убрать лайк" : "Лайкнуть"}
+          </button>
           <button
             onClick={() => {
               handleReply(contextMenu.msg);

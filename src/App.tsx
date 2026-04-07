@@ -11,6 +11,8 @@ import LogoNew from "./assets/newiconbdsite.png";
 import NotFound from "./pages/NotFound";
 import NearbyShopsList from "./components/NearbyShopsList";
 
+const APK_URL = "https://livetouch.chat/downloads/app-release.apk";
+
 function App() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -78,6 +80,23 @@ function App() {
           backgroundColor: "white",
         }}
       >
+        <a
+          href={APK_URL}
+          download="LT_App.apk"
+          style={{
+            ...navLinkStyle,
+            color: "#10545F",
+            fontWeight: "800",
+            border: "1px solid #10545F",
+            padding: "4px 10px",
+            borderRadius: "20px",
+            display: "flex",
+            alignItems: "center",
+            gap: "5px",
+          }}
+        >
+          <span style={{ fontSize: "16px" }}>📱</span> Скачать для Android
+        </a>
         <NavLink to="/nearby" style={getNavLinkStyle}>
           Рядом
         </NavLink>

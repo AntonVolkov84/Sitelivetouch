@@ -1,5 +1,6 @@
 import { type DecryptedMessage } from "../types";
 import "./Message.css";
+import { IoHeart } from "react-icons/io5";
 
 interface PropsMessage {
   message: DecryptedMessage;
@@ -7,9 +8,10 @@ interface PropsMessage {
   allMessages: DecryptedMessage[];
   onPressProfile?: (id: number) => void;
   onContextMenu?: (e: React.MouseEvent, msg: DecryptedMessage) => void;
+  onLike?: (id: number) => void;
 }
 
-export default function Message({ message, isMe, onPressProfile, onContextMenu, allMessages }: PropsMessage) {
+export default function Message({ message, isMe, onPressProfile, onContextMenu, onLike, allMessages }: PropsMessage) {
   const repliedMsg = message.reply_to_id
     ? allMessages.find(
         (m) =>
@@ -91,6 +93,19 @@ export default function Message({ message, isMe, onPressProfile, onContextMenu, 
               ? message.updated_at
               : message.created_at,
           ).toLocaleDateString([], { day: "numeric", month: "short" })}
+          {message.likes_count !== undefined && message.likes_count > 0 && (
+            <div
+              className={`message-like-tag ${message.is_liked ? "liked" : ""}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                onLike?.(Number(message.id));
+              }}
+              style={{ marginLeft: "6px" }}
+            >
+              <IoHeart className="like-icon" />
+              <span className="like-count">{message.likes_count}</span>
+            </div>
+          )}
         </div>
       </div>
     </div>

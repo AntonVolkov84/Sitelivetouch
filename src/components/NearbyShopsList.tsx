@@ -107,7 +107,7 @@ const NearbyShopsList: React.FC = () => {
                   <div className="product-details">
                     <span className="product-name-mini">{product.name}</span>
                     <div className="product-meta-mini">
-                      <strong className="product-price-mini">{product.price} грн</strong>
+                      <strong className="product-price-mini">{product.price} руб</strong>
                     </div>
                     <span className="product-name-mini-decription">{product.description}</span>
                   </div>

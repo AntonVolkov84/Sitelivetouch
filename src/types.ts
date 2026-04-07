@@ -81,6 +81,8 @@ export type DecryptedMessage = {
   parent_id: number;
   sender_public_key?: string;
   updated_at?: string;
+  likes_count?: number;
+  is_liked?: boolean;
 };
 export type GetParticipantsData = {
   public_key: string;
