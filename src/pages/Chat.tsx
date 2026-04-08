@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback, useLayoutEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   type Chat,
@@ -65,6 +65,10 @@ export default function Chat() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [showScrollDown, setShowScrollDown] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const isChatSwitchedRef = useRef(false);
+  const isHistoryLoadingRef = useRef(false);
+  const isLockRef = useRef(false);
+  const prevHeightRef = useRef(0);
   const navigate = useNavigate();
   const { ws } = useWS() || {};
   const cleanInput = (text: string) => text.replace(/<\/?[^>]+(>|$)/g, "");
@@ -157,7 +161,7 @@ export default function Chat() {
     };
   }, [ws, selectedChat?.chat_id]);
   const scrollToBottom = () => {
-    const container = document.querySelector(".messages-container");
+    const container = scrollContainerRef.current;
     if (container) {
       container.scrollTo({
         top: container.scrollHeight,
@@ -165,12 +169,12 @@ export default function Chat() {
       });
     }
   };
-  const handleScroll = () => {
+  const handleScroll = useCallback(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
     const scrollBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
     setShowScrollDown(scrollBottom > 300);
-  };
+  }, []);
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (container) {
@@ -182,7 +186,7 @@ export default function Chat() {
         container.removeEventListener("scroll", handleScroll);
       }
     };
-  }, []);
+  }, [messages.length, handleScroll]);
   const handleToggleLike = (messageId: number) => {
     if (!ws || ws.readyState !== WebSocket.OPEN) {
       console.warn("WS connection is not open");
@@ -486,24 +490,38 @@ export default function Chat() {
       "Удалить у всех",
     );
   };
-
   useEffect(() => {
-    const container = document.querySelector(".messages-container");
+    const container = scrollContainerRef.current;
     if (!container) return;
     const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 150;
     if (isAtBottom) {
-      container.scrollTop = container.scrollHeight;
+      setTimeout(() => {
+        container.scrollTo({
+          top: container.scrollHeight,
+          behavior: "smooth",
+        });
+      }, 50);
     }
   }, [messages]);
+  // useEffect(() => {
+  //   const container = document.querySelector(".messages-container");
+  //   if (!container) return;
+  //   const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 150;
+  //   if (isAtBottom) {
+  //     container.scrollTop = container.scrollHeight;
+  //   }
+  // }, [messages]);
 
   const loadMessages = async (currentOffset: number = 0) => {
-    if (!selectedChat || !user) return;
+    if (isLockRef.current || !selectedChat || !user) return;
     if (currentOffset > 0 && (!hasMore || isFetchingHistory)) return;
     try {
+      isLockRef.current = true;
       setIsFetchingHistory(true);
-      const container = document.querySelector(".messages-container");
-      const previousHeight = container ? container.scrollHeight : 0;
-      const previousScrollTop = container ? container.scrollTop : 0;
+      const container = scrollContainerRef.current;
+      prevHeightRef.current = container?.scrollHeight || 0;
+      isHistoryLoadingRef.current = currentOffset > 0;
+      isChatSwitchedRef.current = currentOffset === 0;
       const keyPair = getStoredKeyPair();
       if (!keyPair) {
         console.error("Ключи не найдены");
@@ -533,31 +551,41 @@ export default function Chat() {
       if (currentOffset === 0) {
         setMessages(newDecrypted);
         setOffset(LIMIT);
-        requestAnimationFrame(() => {
-          if (container) {
-            container.scrollTo({ top: container.scrollHeight, behavior: "instant" });
-            setTimeout(() => {
-              container.scrollTop = container.scrollHeight;
-            }, 250);
-          }
-        });
+        isChatSwitchedRef.current = true;
+        isHistoryLoadingRef.current = false;
       } else {
-        setMessages((prev) => [...newDecrypted, ...prev]);
-        setOffset(currentOffset + LIMIT);
-        requestAnimationFrame(() => {
-          if (container) {
-            const newHeight = container.scrollHeight;
-            container.scrollTop = newHeight - previousHeight + previousScrollTop;
-          }
+        setMessages((prev) => {
+          const combined = [...newDecrypted, ...prev];
+          return combined.filter((msg, index, self) => index === self.findIndex((m) => m.id === msg.id));
         });
+        setOffset(currentOffset + LIMIT);
       }
     } catch (err) {
       console.error("Load messages error:", err);
     } finally {
-      setIsFetchingHistory(false);
+      setTimeout(() => {
+        setIsFetchingHistory(false);
+        isLockRef.current = false;
+      }, 500);
     }
   };
-
+  useLayoutEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    if (isChatSwitchedRef.current) {
+      container.scrollTop = container.scrollHeight;
+      isChatSwitchedRef.current = false;
+      return;
+    }
+    if (isHistoryLoadingRef.current) {
+      const newHeight = container.scrollHeight;
+      const diff = newHeight - prevHeightRef.current;
+      if (diff > 0) {
+        container.scrollTop = container.scrollTop + diff;
+      }
+      isHistoryLoadingRef.current = false;
+    }
+  }, [messages]);
   useEffect(() => {
     setMessages([]);
     if (selectedChat) loadMessages();
@@ -811,7 +839,7 @@ export default function Chat() {
     }
   };
   useEffect(() => {
-    const container = document.querySelector(".messages-container");
+    const container = scrollContainerRef.current;
     const observer = new IntersectionObserver(
       (entries) => {
         const container = document.querySelector(".messages-container");
@@ -821,6 +849,7 @@ export default function Chat() {
           !isFetchingHistory &&
           messages.length >= LIMIT &&
           container &&
+          offset > 0 &&
           container.scrollTop < 200
         ) {
           loadMessages(offset);
@@ -833,7 +862,7 @@ export default function Chat() {
     if (target) observer.observe(target);
 
     return () => observer.disconnect();
-  }, [offset, hasMore, isFetchingHistory, selectedChat, messages.length]);
+  }, [offset, hasMore, isFetchingHistory]);
 
   if (loading) return <h2 className="loader">Загрузка...</h2>;
   const handleCopy = async (msg: DecryptedMessage) => {
@@ -1022,14 +1051,7 @@ export default function Chat() {
                 </div>
               </div>
             </header>
-            <div
-              className="messages-container"
-              ref={(el) => {
-                if (el) {
-                  scrollContainerRef.current = el;
-                }
-              }}
-            >
+            <div className="messages-container" ref={scrollContainerRef}>
               <div id="scroll-sentinel" style={{ height: "10px" }}>
                 {isFetchingHistory && <div className="loader-mini">Загрузка истории...</div>}
               </div>
