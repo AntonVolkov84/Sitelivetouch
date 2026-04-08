@@ -81,7 +81,7 @@
 
 .message-time {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: flex-end;
   font-size: 11px;
   margin-top: 4px;
@@ -250,46 +250,55 @@
   color: #eee;
 }
 .message-like-tag {
-  display: inline-flex; /* Чтобы не растягивался */
+  display: inline-flex;
   align-items: center;
-  gap: 3px;
-  background: rgba(0, 0, 0, 0.05); /* Нейтральный фон для чужих сообщений */
-  border-radius: 10px;
-  padding: 2px 6px;
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  user-select: none;
-  vertical-align: middle;
+  justify-content: center;
+  background: transparent;
+  border-radius: 12px;
+  padding: 0 4px;
+  line-height: 1;
+  height: 18px;
+  position: relative;
+  top: 3px;
+  gap: 4px;
+}
+.message-like-tag:hover {
+  background: rgba(0, 0, 0, 0.03);
 }
 
-/* Лайк на МОИХ сообщениях (синий бабл) */
-.me .message-like-tag {
-  background: rgba(255, 255, 255, 0.2);
+/* --- ТВОИ СООБЩЕНИЯ (справа) --- */
+.me .like-count {
+  color: #ff3b30 !important;
+  font-weight: 600 !important;
+  font-size: 14px !important; /* ОБЯЗАТЕЛЬНО добавь px */
 }
 
-.me .message-like-tag .like-icon,
-.me .message-like-tag .like-count {
-  color: rgba(255, 255, 255, 0.9);
+/* Для чужих сообщений */
+.them .like-count {
+  color: #4a8cff !important;
+  font-weight: 600 !important;
+  font-size: 14px !important; /* ОБЯЗАТЕЛЬНО добавь px */
 }
 
-/* Когда лайк АКТИВЕН на моих сообщениях */
-.me .message-like-tag.liked {
-  background: #ffffff; /* Белый фон, чтобы выделить красный цвет */
+/* --- СОСТОЯНИЕ "ЛАЙКНУТО" (когда ты нажал) --- */
+/* Можно добавить легкую заливку, чтобы было понятно, что кнопка активна */
+.message-like-tag.liked {
+  background: rgba(255, 59, 48, 0.05); /* Совсем бледный розовый */
+  animation: heart-pop 0.3s ease-out; /* Твоя анимация прыжка */
 }
 
-.me .message-like-tag.liked .like-icon,
-.me .message-like-tag.liked .like-count {
-  color: #ff3b30; /* Ярко-красный на белом фоне */
+.like-icon {
+  /* Принудительно ставим размер */
+  width: 16px !important;
+  height: 16px !important;
+  object-fit: contain;
+  display: block; /* Убирает лишние зазоры строчного элемента */
 }
 
-/* Состояние "Лайкнуто" для ЧУЖИХ сообщений */
-.them .message-like-tag.liked {
-  background: #ffebeb;
-}
 .highlight-flash {
   animation: flash-bg 2s ease-out;
 }
-/* Стили для цитаты, чтобы она выглядела кликабельной */
+
 .message-reply-quote {
   cursor: pointer;
   border-left: 3px solid #4a8cff;

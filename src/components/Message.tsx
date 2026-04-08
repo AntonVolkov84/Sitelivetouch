@@ -1,6 +1,6 @@
 import { type DecryptedMessage } from "../types";
 import "./Message.css";
-import { IoHeart } from "react-icons/io5";
+import IoHeart from "../assets/Like.svg";
 import { useModal } from "../context/ModalContext";
 
 interface PropsMessage {
@@ -121,7 +121,7 @@ export default function Message({ message, isMe, onPressProfile, onContextMenu, 
               }}
               style={{ marginLeft: "6px" }}
             >
-              <IoHeart className="like-icon" />
+              <img src={IoHeart} className="like-icon" alt="like" />
               <span className="like-count">{message.likes_count}</span>
             </div>
           )}

@@ -11,6 +11,7 @@ import { api } from "../../axiosinstance";
 import { useWS } from "../context/WsContext";
 import { useModal } from "../context/ModalContext";
 import Message from "../components/Message";
+import { IoArrowDownOutline } from "react-icons/io5";
 import ProfileView from "../components/ProfileView";
 import { IoHeart } from "react-icons/io5";
 import {
@@ -62,6 +63,7 @@ export default function Chat() {
   const [_, setCanLoadHistory] = useState(false);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const [showScrollDown, setShowScrollDown] = useState(false);
   const navigate = useNavigate();
   const { ws } = useWS() || {};
   const cleanInput = (text: string) => text.replace(/<\/?[^>]+(>|$)/g, "");
@@ -153,6 +155,25 @@ export default function Chat() {
       ws.removeEventListener("close", handleClose);
     };
   }, [ws, selectedChat?.chat_id]);
+  const scrollToBottom = () => {
+    const container = document.querySelector(".messages-container");
+    if (container) {
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: "smooth",
+      });
+    }
+  };
+  useEffect(() => {
+    const container = document.querySelector(".messages-container");
+    if (!container) return;
+    const handleScroll = () => {
+      const offset = container.scrollHeight - container.scrollTop - container.clientHeight;
+      setShowScrollDown(offset > 300);
+    };
+    container.addEventListener("scroll", handleScroll);
+    return () => container.removeEventListener("scroll", handleScroll);
+  }, []);
   const handleToggleLike = (messageId: number) => {
     if (!ws || ws.readyState !== WebSocket.OPEN) {
       console.warn("WS connection is not open");
@@ -1006,6 +1027,11 @@ export default function Chat() {
                   />
                 </div>
               ))}
+              {showScrollDown && (
+                <button className="scroll-down-btn" onClick={scrollToBottom}>
+                  <IoArrowDownOutline />
+                </button>
+              )}
             </div>
             <footer className="input-area">
               {editMode && selectedMessage && (
