@@ -268,16 +268,16 @@
 
 /* --- ТВОИ СООБЩЕНИЯ (справа) --- */
 .me .like-count {
-  color: #ff3b30 !important;
+  color: rgba(255, 255, 255, 0.7) !important;
   font-weight: 600 !important;
-  font-size: 14px !important; /* ОБЯЗАТЕЛЬНО добавь px */
+  font-size: 12px !important; /* ОБЯЗАТЕЛЬНО добавь px */
 }
 
 /* Для чужих сообщений */
 .them .like-count {
-  color: #4a8cff !important;
+  color: #8e8e93 !important;
   font-weight: 600 !important;
-  font-size: 14px !important; /* ОБЯЗАТЕЛЬНО добавь px */
+  font-size: 12px !important; /* ОБЯЗАТЕЛЬНО добавь px */
 }
 
 /* --- СОСТОЯНИЕ "ЛАЙКНУТО" (когда ты нажал) --- */

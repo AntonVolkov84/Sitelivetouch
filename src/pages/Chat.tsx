@@ -64,6 +64,7 @@ export default function Chat() {
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [showScrollDown, setShowScrollDown] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { ws } = useWS() || {};
   const cleanInput = (text: string) => text.replace(/<\/?[^>]+(>|$)/g, "");
@@ -164,15 +165,23 @@ export default function Chat() {
       });
     }
   };
-  useEffect(() => {
-    const container = document.querySelector(".messages-container");
+  const handleScroll = () => {
+    const container = scrollContainerRef.current;
     if (!container) return;
-    const handleScroll = () => {
-      const offset = container.scrollHeight - container.scrollTop - container.clientHeight;
-      setShowScrollDown(offset > 300);
+    const scrollBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+    setShowScrollDown(scrollBottom > 300);
+  };
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (container) {
+      container.addEventListener("scroll", handleScroll);
+      handleScroll();
+    }
+    return () => {
+      if (container) {
+        container.removeEventListener("scroll", handleScroll);
+      }
     };
-    container.addEventListener("scroll", handleScroll);
-    return () => container.removeEventListener("scroll", handleScroll);
   }, []);
   const handleToggleLike = (messageId: number) => {
     if (!ws || ws.readyState !== WebSocket.OPEN) {
@@ -1013,7 +1022,14 @@ export default function Chat() {
                 </div>
               </div>
             </header>
-            <div className="messages-container">
+            <div
+              className="messages-container"
+              ref={(el) => {
+                if (el) {
+                  scrollContainerRef.current = el;
+                }
+              }}
+            >
               <div id="scroll-sentinel" style={{ height: "10px" }}>
                 {isFetchingHistory && <div className="loader-mini">Загрузка истории...</div>}
               </div>

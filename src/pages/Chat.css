@@ -238,13 +238,15 @@
 .messages-container {
   flex: 1;
   overflow-y: auto;
-  overflow-anchor: none;
+  overflow-anchor: auto;
   padding: 20px;
   display: flex;
   flex-direction: column;
   gap: 8px; /* Расстояние между сообщениями */
 }
-
+#scroll-sentinel {
+  overflow-anchor: none;
+}
 /* Общий ряд сообщения */
 .message-row {
   display: flex;
