@@ -53,11 +53,11 @@ export default function Message({ message, isMe, onPressProfile, onContextMenu, 
       className={`message-wrapper ${isMe ? "me" : "them"}`}
     >
       <div className="message-bubble">
-        {repliedMsg && (
+        {message.reply_to_id && Number(message.reply_to_id) !== 0 && (
           <div
             className="message-reply-quote"
             onClick={() => {
-              const targetId = `msg-${repliedMsg.id}`;
+              const targetId = `msg-${repliedMsg?.id}`;
               const targetElement = document.getElementById(targetId);
               if (targetElement) {
                 targetElement.scrollIntoView({
@@ -76,14 +76,16 @@ export default function Message({ message, isMe, onPressProfile, onContextMenu, 
             <div className="reply-quote-content">
               <span className="reply-quote-sender">Ответ:</span>
               <span className="reply-quote-sender">
-                {repliedMsg.sender_surname} {repliedMsg.sender_name}
+                {repliedMsg ? `${repliedMsg.sender_surname} ${repliedMsg.sender_name}` : "Ответ на сообщение"}
               </span>
               <span className="reply-quote-text">
-                {repliedMsg.text.startsWith("https://")
-                  ? "📎 Файл/Медиа"
-                  : repliedMsg.text.length > 50
-                    ? repliedMsg.text.substring(0, 50) + "..."
-                    : repliedMsg.text}
+                {repliedMsg
+                  ? repliedMsg.text.startsWith("https://")
+                    ? "📎 Файл/Медиа"
+                    : repliedMsg.text.length > 50
+                      ? repliedMsg.text.substring(0, 50) + "..."
+                      : repliedMsg.text
+                  : "Догрузите историю сообщений"}
               </span>
             </div>
           </div>
