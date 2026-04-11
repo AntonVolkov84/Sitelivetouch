@@ -67,6 +67,7 @@ export default function Chat() {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const isChatSwitchedRef = useRef(false);
   const isHistoryLoadingRef = useRef(false);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
   const isLockRef = useRef(false);
   const prevHeightRef = useRef(0);
   const navigate = useNavigate();
@@ -146,7 +147,7 @@ export default function Chat() {
             }
             break;
           default:
-            console.log("ℹ️ Получено другое событие:", data.type);
+          // console.log("ℹ️ Получено другое событие:", data.type);
         }
       } catch (err) {
         console.error("❌ Ошибка при обработке сообщения WS:", err, event.data);
@@ -263,7 +264,8 @@ export default function Chat() {
     }
     try {
       setUploadProgress(1);
-      await uploadFileWeb(file);
+      setPendingFile(file);
+      event.target.value = "";
     } catch (err: any) {
       if (user) {
         logError(user.email, "Web Chat: markAsRead", err.response?.data || err.message);
@@ -271,6 +273,27 @@ export default function Chat() {
     } finally {
       setUploadProgress(0);
       event.target.value = "";
+    }
+  };
+  const onSendMessage = async () => {
+    if (!pendingFile && !inputText.trim()) return;
+    try {
+      let finalMessage = inputText.trim();
+      if (pendingFile) {
+        setUploadProgress(1);
+        const response = await uploadFileWeb(pendingFile);
+        const uploadedUrl = String(response);
+        finalMessage = finalMessage ? `${uploadedUrl}:::TEXT:::${finalMessage}` : uploadedUrl;
+      }
+      await handleSendWeb(finalMessage);
+      setPendingFile(null);
+      setInputText("");
+    } catch (err: any) {
+      if (user) {
+        logError(user.email, "Web Chat: SendMessageWithFile", err.response?.data || err.message);
+      }
+    } finally {
+      setUploadProgress(0);
     }
   };
   const uploadFileWeb = async (file: File) => {
@@ -305,9 +328,8 @@ export default function Chat() {
             const data = JSON.parse(xhr.responseText);
             if (selectedChat) {
               await addFileRecord(selectedChat.chat_id, bucket, finalFilename);
-              handleSendWeb(data.url);
             }
-            resolve(data);
+            resolve(data.url);
           } catch (e) {
             reject(new Error("Ошибка парсинга ответа"));
           }
@@ -1087,6 +1109,33 @@ export default function Chat() {
                   </button>
                 </div>
               )}
+              {pendingFile && (
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    padding: "8px 12px",
+                    backgroundColor: "#f0f7f8",
+                    borderLeft: "4px solid #10545F",
+                    marginBottom: "5px",
+                  }}
+                >
+                  <div style={{ flex: 1 }}>
+                    <span style={{ fontWeight: "bold", fontSize: "14px", color: "#10545F" }}>
+                      Файл готов к отправке:
+                    </span>
+                    <p style={{ fontSize: "13px", margin: 0, color: "#666" }}>
+                      {pendingFile.name} ({(pendingFile.size / 1024 / 1024).toFixed(2)} МБ)
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setPendingFile(null)}
+                    style={{ background: "none", border: "none", cursor: "pointer", fontSize: "20px", color: "#999" }}
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
               {replyMessage && (
                 <div className="reply-indicator-bar">
                   <div className="reply-info">
@@ -1169,13 +1218,9 @@ export default function Chat() {
                 />
 
                 <button
+                  disabled={uploadProgress > 0}
                   className="send-button"
-                  onClick={() => {
-                    if (inputText.trim()) {
-                      handleSendWeb(inputText);
-                      setInputText("");
-                    }
-                  }}
+                  onClick={onSendMessage}
                   aria-label="Отправить"
                 >
                   <svg

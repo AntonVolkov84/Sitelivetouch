@@ -23,27 +23,55 @@ export default function Message({ message, isMe, onPressProfile, onContextMenu, 
     : null;
 
   const renderContent = () => {
-    const text = message.text;
+    const rawText = message.text;
+    const parts = rawText.split(":::TEXT:::");
+    const fileUrl = parts[0];
+    const caption = parts.length > 1 ? parts[1] : null;
 
-    if (text.startsWith("https://api.livetouch.chat/photos/")) {
-      return <img src={text} alt="Shared" onClick={() => window.open(text, "_blank")} />;
-    }
-    if (text.startsWith("https://api.livetouch.chat/video/")) {
-      return <video src={text} controls />;
-    }
-    if (text.startsWith("https://api.livetouch.chat/files/")) {
-      const fileName = text.split("/").pop();
+    if (fileUrl.startsWith("https://api.livetouch.chat/photos/")) {
       return (
-        <a href={text} target="_blank" rel="noreferrer" className="file-link">
-          <div className="file-icon">📄</div>
-          <div>
-            <div className="file-name">{fileName}</div>
-            <div className="file-sub">Скачать</div>
-          </div>
-        </a>
+        <div className="media-container">
+          <img src={fileUrl} alt="Shared" onClick={() => window.open(fileUrl, "_blank")} className="msg-image" />
+          {caption && (
+            <div className="msg-caption" style={{ color: isMe ? "#FFFFFF" : "black" }}>
+              {caption}
+            </div>
+          )}
+        </div>
       );
     }
-    return <span className="msg-text">{text}</span>;
+    if (fileUrl.startsWith("https://api.livetouch.chat/video/")) {
+      return (
+        <div className="media-container">
+          <video src={fileUrl} controls className="msg-video" />
+          {caption && (
+            <div className="msg-caption" style={{ color: isMe ? "#FFFFFF" : "black" }}>
+              {caption}
+            </div>
+          )}
+        </div>
+      );
+    }
+    if (fileUrl.startsWith("https://api.livetouch.chat/files/")) {
+      const fileName = fileUrl.split("/").pop();
+      return (
+        <div className="file-wrapper">
+          <a href={fileUrl} target="_blank" rel="noreferrer" className="file-link">
+            <div className="file-icon">📄</div>
+            <div>
+              <div className="file-name">{fileName}</div>
+              <div className="file-sub">Скачать</div>
+            </div>
+          </a>
+          {caption && (
+            <div className="msg-caption" style={{ color: isMe ? "#FFFFFF" : "black" }}>
+              {caption}
+            </div>
+          )}
+        </div>
+      );
+    }
+    return <span className="msg-text">{rawText}</span>;
   };
 
   return (

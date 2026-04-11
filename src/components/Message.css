@@ -313,6 +313,33 @@
   background: rgba(0, 0, 0, 0.1);
 }
 
+.media-container {
+  display: flex;
+  flex-direction: column;
+  max-width: 100%;
+}
+
+.msg-image,
+.msg-video {
+  max-width: 400px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.msg-caption {
+  margin-top: 8px;
+  font-size: 0.95rem;
+  color: #10545f;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  padding: 0 4px;
+}
+
+.file-wrapper {
+  display: flex;
+  flex-direction: column;
+}
+
 @keyframes flash-bg {
   0% {
     background-color: rgba(74, 140, 255, 0.4);
