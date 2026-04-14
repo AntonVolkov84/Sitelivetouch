@@ -135,6 +135,8 @@ export interface IProduct {
   description: string;
   quantities: string;
   image_url?: string;
+  post_payment: boolean;
+  service_type: "product" | "service";
 }
 export interface Product {
   id: number;

@@ -273,21 +273,47 @@
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(0, 0, 0, 0.75);
+  background: rgba(0, 0, 0, 0.7);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 9999; /* Максимальный приоритет */
+  z-index: 9999;
+  backdrop-filter: blur(2px);
 }
 .product-modal-content {
   background: white;
-  padding: 30px;
+  padding: 0; /* Убираем общий паддинг, распределим его внутри */
   border-radius: 16px;
-  width: 90%;
+  width: 95%;
   max-width: 500px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-  position: relative; /* Чтобы контент не терялся */
+  max-height: 90vh; /* Чтобы модалка не вылетала за экран */
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Чтобы скругления не обрезались контентом */
   z-index: 10000;
+}
+
+.product-modal-content h3 {
+  padding: 20px 25px;
+  margin: 0;
+  border-bottom: 1px solid #eee;
+  font-size: 1.2 rem;
+  color: #333;
+  text-align: center;
+}
+.product-modal-body {
+  padding: 20px 25px;
+  overflow-y: auto; /* ВКЛЮЧАЕМ СКРОЛЛ ТУТ */
+  flex-grow: 1;
+}
+
+.product-modal-body::-webkit-scrollbar {
+  width: 6px;
+}
+.product-modal-body::-webkit-scrollbar-thumb {
+  background-color: #ddd;
+  border-radius: 10px;
 }
 
 .image-upload-section {
@@ -315,18 +341,36 @@
 }
 
 .inputs-section input,
+.inputs-section select,
 .inputs-section textarea {
   width: 100%;
-  margin-bottom: 10px;
-  padding: 10px;
+  margin-bottom: 12px;
+  padding: 12px; /* Одинаковый внутренний отступ */
   border: 1px solid #ddd;
   border-radius: 8px;
+  font-size: 1rem; /* Одинаковый размер шрифта */
+  font-family: inherit; /* Чтобы шрифт не менялся на системный */
+  box-sizing: border-box;
+  display: block;
+  height: 40px; /* Явно задаем высоту для инпутов и селектов */
+}
+.form-group checkbox-group {
+  max-height: 40px;
+}
+.inputs-section select {
+  font-size: 1rem;
+  padding-left: 12px;
+  padding-right: 12px;
+  padding-top: 0;
+  padding-bottom: 0;
 }
 .product-modal-footer {
+  padding: 15px 25px;
+  border-top: 1px solid #eee;
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
-  margin-top: 20px;
+  gap: 12px;
+  background: #fcfcfc;
 }
 
 .btn-save {
@@ -420,6 +464,7 @@
   display: flex;
   flex-direction: column;
   margin-top: 10px;
+  gap: 8px;
 }
 
 .edit-btn {
@@ -451,6 +496,110 @@
 .delete-btn:hover {
   background-color: red;
   color: white;
+}
+.status-btn--off {
+  margin-top: 10px;
+}
+.status-btn--on {
+  margin-top: 10px;
+  opacity: 1 !important;
+  background-color: #e6f7ff;
+  border: 1px solid #1890ff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+.inactive-card {
+  filter: grayscale(0.5);
+  border: 1px dashed #ccc;
+  position: relative;
+  overflow: hidden;
+  background: #fdfdfd;
+  transition: all 0.3s ease;
+  transform: translateZ(0);
+}
+.inactive-card img,
+.inactive-card .img-placeholder {
+  opacity: 0.5;
+  position: relative;
+  z-index: 0;
+}
+.status-badge {
+  background: #ff4d4f;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 8px;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+.inactive-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+
+  /* Создаем диагональные полосы */
+  background-image: repeating-linear-gradient(
+    45deg,
+    /* Угол наклона */ transparent,
+    /* Первая полоса прозрачная */ transparent 10px,
+    /* Ширина прозрачной полосы */ rgba(200, 200, 200, 0.2) 10px,
+    /* Вторая полоса серая полупрозрачная */ rgba(200, 200, 200, 0.2) 20px /* Ширина серой полосы */
+  );
+
+  pointer-events: none; /* Чтобы штриховка не мешала кликам по кнопкам */
+  z-index: 1; /* Чтобы штриховка была ПОВЕРХ фото и текста, но ПОД кнопками */
+}
+
+/* Гарантируем, что контент (фото, текст) под штриховкой */
+.inactive-card img,
+.inactive-card .product-info {
+  position: relative;
+  z-index: 0;
+}
+
+/* Гарантируем, что КНОПКИ ПОВЕРХ штриховки, чтобы по ним можно было кликнуть */
+.inactive-card .product-card-actions {
+  position: relative;
+  z-index: 2;
+  opacity: 1;
+}
+.inactive-card .status-badge {
+  position: relative;
+  z-index: 2;
+  opacity: 1;
+}
+.checkbox-group {
+  background: #f0f7ff; /* Подсветим зону чекбокса */
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  border: 1px solid #e0eaff;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #2c3e50;
+  user-select: none;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 5px;
+  margin-top: 10px;
 }
 
 @keyframes fadeIn {

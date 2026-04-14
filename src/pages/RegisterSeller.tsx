@@ -33,6 +33,8 @@ export default function RegisterSeller() {
     image: null as File | null,
     preview: "",
     quantities: "1.000",
+    service_type: "product",
+    post_payment: false,
   });
   const sanitizeInput = (val: string) => val.replace(/<[^>]*>?/gm, "").trim();
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -163,6 +165,8 @@ export default function RegisterSeller() {
       image: null,
       preview: "",
       quantities: "1.000",
+      post_payment: false,
+      service_type: "product",
     });
   };
   const saveProduct = async () => {
@@ -179,7 +183,7 @@ export default function RegisterSeller() {
       setIsSubmitting(false);
       return showAlert("Ошибка", "Название не должно превышать 30 символов");
     }
-    if (isNaN(priceNum) || priceNum <= 0) {
+    if (isNaN(priceNum)) {
       setIsSubmitting(false);
       return showAlert("Ошибка", "Введите корректную цену выше 0");
     }
@@ -196,6 +200,8 @@ export default function RegisterSeller() {
     data.append("price", priceNum.toString());
     data.append("description", cleanDesc);
     data.append("quantities", qtyNum.toString());
+    data.append("service_type", newProduct.service_type || "product");
+    data.append("post_payment", String(!!newProduct.post_payment));
     if (newProduct.image) {
       data.append("image", newProduct.image);
     }
@@ -248,6 +254,19 @@ export default function RegisterSeller() {
       "Удалить",
     );
   };
+  const handleToggleStatus = async (productId: number) => {
+    try {
+      const response = await api.patch(`/seller/products/${productId}/toggle`);
+      if (response.data.success) {
+        const newStatus = response.data.is_active;
+        setProducts((prev) => prev.map((p) => (p.id === productId ? { ...p, is_active: newStatus } : p)));
+        showAlert("Успех", newStatus ? "Товар снова в продаже" : "Товар снят с продажи");
+      }
+    } catch (err: any) {
+      logError(user?.email || "unknown", "handleToggleStatus", err);
+      showAlert("Ошибка", "не удалось изменить статус товара");
+    }
+  };
   const handleEditClick = (product: IProduct) => {
     setEditingProductId(product.id);
     setNewProduct({
@@ -257,6 +276,8 @@ export default function RegisterSeller() {
       quantities: product.quantities,
       image: null,
       preview: product.image_url || "",
+      service_type: product.service_type,
+      post_payment: product.post_payment,
     });
     setIsProductModalOpen(true);
   };
@@ -352,18 +373,27 @@ export default function RegisterSeller() {
           <div className="products-placeholder">
             <div className="products-grid">
               {products.map((p: any) => (
-                <div key={p.id} className="product-card">
+                <div key={p.id} className={`product-card ${!p.is_active ? "inactive-card" : ""}`}>
                   {p.image_url ? (
                     <img src={p.image_url} alt={p.name} />
                   ) : (
                     <div className="img-placeholder">Нет фото</div>
                   )}
-                  <h4>{p.name}</h4>
+                  <h4>
+                    {p.name}
+                    {!p.is_active && <span className="status-badge">Снято</span>}
+                  </h4>
                   <p className="price">{p.price} руб</p>
                   <p className="qty">Количество: {parseFloat(p.quantities).toFixed(3)} кг/шт</p>
                   <div className="product-card-actions">
                     <button className="edit-btn" onClick={() => handleEditClick(p)}>
                       Редактировать
+                    </button>
+                    <button
+                      className={p.is_active ? "edit-btn status-btn--off" : " edit-btn status-btn--on"}
+                      onClick={() => handleToggleStatus(p.id)}
+                    >
+                      {p.is_active ? "Снять с продажи" : "Вернуть в продажу"}
                     </button>
                     <button className="delete-btn" onClick={() => handleDeleteProduct(p.id)}>
                       Удалить
@@ -391,6 +421,21 @@ export default function RegisterSeller() {
                   </label>
                 </div>
                 <div className="inputs-section">
+                  <select
+                    value={newProduct.service_type}
+                    onChange={(e) => {
+                      const isService = e.target.value === "service";
+                      setNewProduct({
+                        ...newProduct,
+                        service_type: e.target.value,
+                        post_payment: isService ? newProduct.post_payment : false,
+                      });
+                    }}
+                    className="seller-form-input"
+                  >
+                    <option value="product">Товар</option>
+                    <option value="service">Услуга</option>
+                  </select>
                   <input
                     type="text"
                     placeholder="Название товара"
@@ -400,9 +445,28 @@ export default function RegisterSeller() {
                   <input
                     type="number"
                     placeholder="Цена (руб)"
-                    value={newProduct.price}
+                    value={newProduct.post_payment ? 0 : newProduct.price}
                     onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
                   />
+                  {newProduct.service_type === "service" && (
+                    <div className="form-group checkbox-group">
+                      <label className="checkbox-label">
+                        <input
+                          type="checkbox"
+                          checked={newProduct.post_payment}
+                          onChange={(e) => {
+                            const isChecked = e.target.checked;
+                            setNewProduct({
+                              ...newProduct,
+                              post_payment: isChecked,
+                              price: isChecked ? "0" : newProduct.price,
+                            });
+                          }}
+                        />
+                        <span>Оплата после получения (послеоплата)</span>
+                      </label>
+                    </div>
+                  )}
                   <input
                     type="number"
                     step="0.001"
