@@ -137,6 +137,7 @@ export interface IProduct {
   image_url?: string;
   post_payment: boolean;
   service_type: "product" | "service";
+  delivery: boolean;
 }
 export interface Product {
   id: number;
@@ -146,6 +147,13 @@ export interface Product {
   quantities: number;
   image_url: string;
   is_active: boolean;
+  post_payment: boolean;
+  service_type: "product" | "service";
+  delivery: boolean;
+}
+export interface CartProduct extends Product {
+  shop_id: number;
+  shop_name: string;
 }
 
 export interface Shop {

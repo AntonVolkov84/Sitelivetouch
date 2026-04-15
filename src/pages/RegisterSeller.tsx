@@ -35,6 +35,7 @@ export default function RegisterSeller() {
     quantities: "1.000",
     service_type: "product",
     post_payment: false,
+    delivery: false,
   });
   const sanitizeInput = (val: string) => val.replace(/<[^>]*>?/gm, "").trim();
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -167,6 +168,7 @@ export default function RegisterSeller() {
       quantities: "1.000",
       post_payment: false,
       service_type: "product",
+      delivery: false,
     });
   };
   const saveProduct = async () => {
@@ -202,6 +204,7 @@ export default function RegisterSeller() {
     data.append("quantities", qtyNum.toString());
     data.append("service_type", newProduct.service_type || "product");
     data.append("post_payment", String(!!newProduct.post_payment));
+    data.append("delivery", String(!!newProduct.delivery));
     if (newProduct.image) {
       data.append("image", newProduct.image);
     }
@@ -278,6 +281,7 @@ export default function RegisterSeller() {
       preview: product.image_url || "",
       service_type: product.service_type,
       post_payment: product.post_payment,
+      delivery: product.delivery,
     });
     setIsProductModalOpen(true);
   };
@@ -381,6 +385,7 @@ export default function RegisterSeller() {
                   )}
                   <h4>
                     {p.name}
+                    {p.is_active && p.delivery && <span className="status-badge-delivery">🚚</span>}
                     {!p.is_active && <span className="status-badge">Снято</span>}
                   </h4>
                   <p className="price">{p.price} руб</p>
@@ -448,6 +453,18 @@ export default function RegisterSeller() {
                     value={newProduct.post_payment ? 0 : newProduct.price}
                     onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
                   />
+                  {newProduct.service_type === "product" && (
+                    <div className="form-group checkbox-group">
+                      <label className="checkbox-label">
+                        <input
+                          type="checkbox"
+                          checked={newProduct.delivery}
+                          onChange={(e) => setNewProduct({ ...newProduct, delivery: e.target.checked })}
+                        />
+                        Возможна доставка
+                      </label>
+                    </div>
+                  )}
                   {newProduct.service_type === "service" && (
                     <div className="form-group checkbox-group">
                       <label className="checkbox-label">
