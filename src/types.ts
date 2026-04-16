@@ -14,6 +14,7 @@ export type UserAuthData = {
   public_key: string;
   phone: string;
   role?: string;
+  is_taxi: boolean;
 };
 export type RegisterFormData = {
   username: string;

@@ -1201,7 +1201,7 @@ export default function Chat() {
                       if (e.key === "Enter" && !e.shiftKey) {
                         e.preventDefault();
                         if (inputText.trim()) {
-                          handleSendWeb(inputText);
+                          onSendMessage();
                           setInputText("");
                           e.currentTarget.style.height = "auto";
                         }

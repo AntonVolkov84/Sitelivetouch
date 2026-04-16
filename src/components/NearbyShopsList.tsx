@@ -100,11 +100,11 @@ const NearbyShopsList: React.FC = () => {
       return prev.filter((item) => item.product.id !== productId);
     });
   };
-  const clearCart = () => {
-    if (window.confirm("Очистить корзину и показать все магазины?")) {
-      setCart([]);
-    }
-  };
+  // const clearCart = () => {
+  //   if (window.confirm("Очистить корзину и показать все магазины?")) {
+  //     setCart([]);
+  //   }
+  // };
   const handleSearchWithNewCoords = async () => {
     if (!tempLocation) return;
     setLoading(true);

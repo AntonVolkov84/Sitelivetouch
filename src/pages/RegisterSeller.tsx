@@ -6,6 +6,7 @@ import "./RegisterSeller.css";
 import LocationPicker from "../components/LocationPicker";
 import { logError } from "../utils/logger";
 import { type IProduct } from "../types";
+import ngeo from "ngeohash";
 
 export default function RegisterSeller() {
   const { user, loading } = useUser();
@@ -69,7 +70,7 @@ export default function RegisterSeller() {
         phone: cleanPhone,
       });
       if (response.data.success) {
-        setStep(3);
+        setStep(2);
       }
     } catch (err: any) {
       if (user) {
@@ -77,6 +78,33 @@ export default function RegisterSeller() {
       }
       const errorMsg = err.response?.data?.error || "Не удалось сохранить телефон";
       showAlert("Ошибка", errorMsg);
+    }
+  };
+  const getTaxiLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          const hash = ngeo.encode(lat, lng, 9);
+          setFormData((prev) => ({
+            ...prev,
+            location_lat: lat,
+            location_lng: lng,
+            geohash: hash,
+            is_taxi: true,
+            opening_time: "00:00",
+            closing_time: "23:59",
+            service_radius: 500,
+            payment_details: "Оплата водителю - постоплата",
+          }));
+        },
+        (error) => {
+          console.error("Ошибка получения геолокации", error);
+          showAlert("Внимание", "Не удалось получить геопозицию. Попробуйте включить GPS и обновить страницу.");
+        },
+        { enableHighAccuracy: true },
+      );
     }
   };
   useEffect(() => {
@@ -149,6 +177,27 @@ export default function RegisterSeller() {
         } catch (err: any) {
           if (user) {
             logError(user.email, "WEB_RegisterSeller: handleFinish", err);
+          }
+          showAlert("Ошибка", err.response?.data?.error || "Не удалось завершить регистрацию");
+        }
+      },
+      "Отправить",
+    );
+  };
+  const handleTaxi = () => {
+    showConfirm(
+      "Регистрация",
+      "Вы регистрируетесь как водитель такси. Все верно?",
+      async () => {
+        try {
+          const response = await api.put("/seller/complete-registration", formData);
+          if (response.data.success) {
+            showAlert("Успех", "Ваш профиль в такси активирован!");
+            setTimeout(() => window.location.reload(), 2000);
+          }
+        } catch (err: any) {
+          if (user) {
+            logError(user.email, "WEB_RegisterSeller: handleTaxi", err);
           }
           showAlert("Ошибка", err.response?.data?.error || "Не удалось завершить регистрацию");
         }
@@ -367,48 +416,57 @@ export default function RegisterSeller() {
             </button>
           </div>
         </aside>
-        <main className="seller-dashboard__content">
-          <header className="content-header">
-            <h2>Все товары</h2>
-            <button className="add-product-btn" onClick={() => setIsProductModalOpen(true)}>
-              + Добавить товар
-            </button>
-          </header>
-          <div className="products-placeholder">
-            <div className="products-grid">
-              {products.map((p: any) => (
-                <div key={p.id} className={`product-card ${!p.is_active ? "inactive-card" : ""}`}>
-                  {p.image_url ? (
-                    <img src={p.image_url} alt={p.name} />
-                  ) : (
-                    <div className="img-placeholder">Нет фото</div>
-                  )}
-                  <h4>
-                    {p.name}
-                    {p.is_active && p.delivery && <span className="status-badge-delivery">🚚</span>}
-                    {!p.is_active && <span className="status-badge">Снято</span>}
-                  </h4>
-                  <p className="price">{p.price} руб</p>
-                  <p className="qty">Количество: {parseFloat(p.quantities).toFixed(3)} кг/шт</p>
-                  <div className="product-card-actions">
-                    <button className="edit-btn" onClick={() => handleEditClick(p)}>
-                      Редактировать
-                    </button>
-                    <button
-                      className={p.is_active ? "edit-btn status-btn--off" : " edit-btn status-btn--on"}
-                      onClick={() => handleToggleStatus(p.id)}
-                    >
-                      {p.is_active ? "Снять с продажи" : "Вернуть в продажу"}
-                    </button>
-                    <button className="delete-btn" onClick={() => handleDeleteProduct(p.id)}>
-                      Удалить
-                    </button>
+        {user?.is_taxi && (
+          <main className="seller-dashboard__content">
+            <header className="content-header">
+              <h2>Водители такси не могут выставлять товары</h2>
+            </header>
+          </main>
+        )}
+        {!user?.is_taxi && (
+          <main className="seller-dashboard__content">
+            <header className="content-header">
+              <h2>Все товары</h2>
+              <button className="add-product-btn" onClick={() => setIsProductModalOpen(true)}>
+                + Добавить товар
+              </button>
+            </header>
+            <div className="products-placeholder">
+              <div className="products-grid">
+                {products.map((p: any) => (
+                  <div key={p.id} className={`product-card ${!p.is_active ? "inactive-card" : ""}`}>
+                    {p.image_url ? (
+                      <img src={p.image_url} alt={p.name} />
+                    ) : (
+                      <div className="img-placeholder">Нет фото</div>
+                    )}
+                    <h4>
+                      {p.name}
+                      {p.is_active && p.delivery && <span className="status-badge-delivery">🚚</span>}
+                      {!p.is_active && <span className="status-badge">Снято</span>}
+                    </h4>
+                    <p className="price">{p.price} руб</p>
+                    <p className="qty">Количество: {parseFloat(p.quantities).toFixed(3)} кг/шт</p>
+                    <div className="product-card-actions">
+                      <button className="edit-btn" onClick={() => handleEditClick(p)}>
+                        Редактировать
+                      </button>
+                      <button
+                        className={p.is_active ? "edit-btn status-btn--off" : " edit-btn status-btn--on"}
+                        onClick={() => handleToggleStatus(p.id)}
+                      >
+                        {p.is_active ? "Снять с продажи" : "Вернуть в продажу"}
+                      </button>
+                      <button className="delete-btn" onClick={() => handleDeleteProduct(p.id)}>
+                        Удалить
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-        </main>
+          </main>
+        )}
         {isProductModalOpen && (
           <div className="product-modal-backdrop">
             <div className="product-modal-content">
@@ -537,6 +595,32 @@ export default function RegisterSeller() {
             </button>
           </div>
         )}
+        {step === 2 && (
+          <div className="seller-form-step">
+            <p className="seller-form-step__text" style={{ textAlign: "center", fontWeight: "600" }}>
+              Выберите тип регистрации:
+            </p>
+            <button
+              className="seller-form-btn"
+              onClick={() => {
+                setStep(3);
+              }}
+            >
+              🏪 Я владелец магазина
+            </button>
+            <button
+              className="seller-form-btn"
+              style={{ background: "#6c757d" }}
+              onClick={() => {
+                setFormData((prev) => ({ ...prev, is_taxi: true }));
+                getTaxiLocation();
+                setStep(4);
+              }}
+            >
+              🚖 Я водитель такси
+            </button>
+          </div>
+        )}
         {step === 3 && (
           <div className="seller-form-step">
             <input
@@ -585,6 +669,32 @@ export default function RegisterSeller() {
             <LocationPicker onLocationSelect={handleLocationChange} />
             <button className="seller-form-btn seller-form-btn--submit" onClick={handleFinish}>
               Завершить
+            </button>
+          </div>
+        )}
+        {step === 4 && (
+          <div className="seller-form-step">
+            <p className="seller-form-step__text">Введите ваши Фамилию и Имя:</p>
+            <input
+              type="text"
+              className="seller-form-input"
+              placeholder="Иванов Александр"
+              value={formData.shop_name}
+              onChange={(e) => setFormData({ ...formData, shop_name: e.target.value })}
+            />
+            <div className="telegram-info-box" style={{ fontSize: "0.8rem" }}>
+              <p>📍 Режим работы: 24/7 (установлено автоматически, потом поменяете)</p>
+              <p>🌐 Координаты определены по вашему текущему местоположению</p>
+            </div>
+            <button className="seller-form-btn seller-form-btn--submit" onClick={handleTaxi}>
+              Завершить регистрацию
+            </button>
+            <button
+              className="seller-form-btn"
+              style={{ background: "transparent", color: "#666", border: "1px solid #ccc" }}
+              onClick={() => setStep(2)}
+            >
+              Назад
             </button>
           </div>
         )}

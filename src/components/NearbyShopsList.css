@@ -604,6 +604,10 @@
 .btn-add-to-cart:active {
   transform: translateY(0);
 }
+.product-price-mini {
+  color: red;
+  font-weight: 800;
+}
 
 /* Адаптивность для мобилок */
 @media (max-width: 768px) {
