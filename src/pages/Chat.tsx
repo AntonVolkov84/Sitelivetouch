@@ -397,15 +397,18 @@ export default function Chat() {
   const handleContextMenu = (e: React.MouseEvent, msg: DecryptedMessage) => {
     e.preventDefault();
     const menuWidth = 150;
-    const menuHeight = 150;
+    const menuHeight = 240;
+    const padding = 60;
     let x = e.clientX;
     let y = e.clientY;
-    if (x + menuWidth > window.innerWidth) {
-      x -= menuWidth;
+    if (x + menuWidth + padding > window.innerWidth) {
+      x = window.innerWidth - menuWidth - padding;
     }
-    if (y + menuHeight > window.innerHeight) {
-      y -= menuHeight;
+    if (y + menuHeight + padding > window.innerHeight) {
+      y = window.innerHeight - menuHeight - padding;
     }
+    x = Math.max(padding, x);
+    y = Math.max(padding, y);
     setContextMenu({ x, y, msg });
   };
   const fetchParticipants = async () => {
